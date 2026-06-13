@@ -493,10 +493,10 @@
   line-height: 1.6;
 }
 
-/* En móvil touch: subir el crédito por encima de los botones (68px + 10px base + margen) */
+/* En móvil touch: centrar el crédito verticalmente entre los botones */
 @media (pointer: coarse) {
   .creditInGame {
-    bottom: 84px;
+    bottom: 38px;
     font-size: 6px;
   }
 }
