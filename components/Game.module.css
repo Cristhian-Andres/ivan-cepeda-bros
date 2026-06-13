@@ -1,0 +1,364 @@
+.wrapper {
+  position: relative;
+  width: min(100vw, calc(100dvh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #000;
+}
+
+@media (orientation: landscape) and (min-width: 900px) {
+  .wrapper {
+    height: min(calc(100dvh - 32px), 620px);
+    width: auto;
+    max-width: calc(100vw - 16px);
+    border: 3px solid #444;
+    border-radius: 24px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+  }
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  touch-action: none;
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.12) 0px,
+    rgba(0, 0, 0, 0.12) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.5;
+}
+
+.hud {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 14px;
+  gap: 8px;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.scoreBox {
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: 5px 9px;
+  color: #fff;
+  font-size: 7px;
+  line-height: 1.7;
+}
+
+.scoreBox span {
+  color: #ffe94e;
+}
+
+.lifeOk {
+  color: #ff5252;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.lifeLost {
+  color: rgba(255, 255, 255, 0.3);
+  text-shadow: 1px 1px 0 #000;
+}
+
+.worldTag {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  right: 14px;
+  z-index: 10;
+  pointer-events: none;
+  font-size: 8px;
+  color: #fff;
+  text-shadow: 2px 2px 0 #000;
+}
+
+@media (pointer: coarse) {
+  .worldTag {
+    display: none;
+  }
+}
+
+/* ----- controles táctiles (solo pantallas táctiles) ----- */
+.touchControls {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .touchControls {
+    display: block;
+  }
+}
+
+.padLeft {
+  position: absolute;
+  left: calc(12px + env(safe-area-inset-left));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 12px;
+}
+
+.padBtn,
+.jumpBtn {
+  pointer-events: all;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: inherit;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.padBtn {
+  width: 56px;
+  height: 56px;
+  font-size: 16px;
+}
+
+.jumpBtn {
+  position: absolute;
+  right: calc(14px + env(safe-area-inset-right));
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  width: 66px;
+  height: 66px;
+  font-size: 18px;
+  background: rgba(206, 36, 36, 0.45);
+}
+
+.padBtn:active,
+.jumpBtn:active {
+  background: rgba(255, 233, 78, 0.55);
+  color: #1a1a2e;
+}
+
+.banner {
+  position: absolute;
+  top: 38%;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  z-index: 15;
+  pointer-events: none;
+  font-size: 14px;
+  color: #fff;
+  text-shadow: 3px 3px 0 #000;
+  animation: blink 0.7s step-start infinite;
+}
+
+.bannerBad {
+  color: #ff5252;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 30, 0.35);
+}
+
+.panel {
+  background: rgba(0, 0, 0, 0.88);
+  border: 2px solid rgba(255, 82, 82, 0.45);
+  border-radius: 10px;
+  padding: 22px 26px;
+  text-align: center;
+  min-width: 260px;
+  max-width: 90%;
+  animation: pop 0.25s ease-out;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.title {
+  font-size: 19px;
+  color: #ff5252;
+  text-shadow: 3px 3px 0 #7a1010;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+  line-height: 1.4;
+}
+
+.titleWin {
+  font-size: 17px;
+  color: #ffe94e;
+  text-shadow: 3px 3px 0 #b8860b;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+}
+
+.titleBad {
+  font-size: 17px;
+  color: #ff5252;
+  text-shadow: 3px 3px 0 #7a1010;
+  margin-bottom: 14px;
+  letter-spacing: 2px;
+}
+
+.subtitle {
+  font-size: 7px;
+  color: #9fd8ff;
+  margin-bottom: 20px;
+}
+
+.scoresRow {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.scoreItem {
+  font-size: 7px;
+  color: #ccc;
+  line-height: 2;
+}
+
+.scoreItem b {
+  color: #ffe94e;
+  font-size: 14px;
+  display: block;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 11px;
+  background: #ffe94e;
+  color: #1a1a2e;
+  border: none;
+  border-radius: 6px;
+  padding: 14px 28px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #b8860b;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+  touch-action: manipulation;
+}
+
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.btn:hover {
+  background: #fff176;
+}
+
+.hint {
+  font-size: 6px;
+  color: #888;
+  margin-top: 14px;
+  line-height: 2;
+}
+
+.creditInGame {
+  position: absolute;
+  bottom: calc(2px + env(safe-area-inset-bottom));
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 8px;
+  color: #fff;
+  text-shadow:
+    2px 2px 0 #000,
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000;
+  z-index: 10;
+  pointer-events: none;
+  line-height: 1.6;
+}
+
+.creditInGame a {
+  color: #ffe94e;
+  text-decoration: underline;
+  pointer-events: all;
+  animation: creditGlow 1.6s ease-in-out infinite;
+}
+
+.creditInGame a:hover {
+  color: #fff176;
+}
+
+@keyframes creditGlow {
+  0%,
+  100% {
+    text-shadow:
+      2px 2px 0 #000,
+      0 0 6px rgba(255, 233, 78, 0.9);
+  }
+  50% {
+    text-shadow:
+      2px 2px 0 #000,
+      0 0 14px rgba(255, 140, 26, 1);
+  }
+}
+
+.credit {
+  position: absolute;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 7px;
+  color: #cfcfcf;
+  text-shadow: 1px 1px 0 #000;
+  line-height: 1.8;
+}
+
+.credit a {
+  color: #ffe94e;
+  text-decoration: underline;
+  pointer-events: all;
+}
+
+.credit a:hover {
+  color: #fff176;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
