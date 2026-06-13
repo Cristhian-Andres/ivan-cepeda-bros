@@ -54,7 +54,7 @@
   background: #000;
 }
 
-/* Móvil en landscape: deja 84px en la parte inferior para la barra de controles */
+/* Móvil en landscape: canvas ocupa todo el alto */
 @media (orientation: landscape) and (pointer: coarse) {
   .wrapper {
     position: fixed;
@@ -62,7 +62,7 @@
     left: 50%;
     transform: translateX(-50%);
     width: auto;
-    height: calc(100dvh - 84px);
+    height: 100dvh;
     max-width: 100dvw;
     border-radius: 0;
     border: none;
@@ -89,9 +89,8 @@
   .wrapper {
     position: fixed;
     left: 50%;
-    /* Centrar en el espacio disponible sobre la zona de controles */
-    top: calc((100dvh - 84px) / 2);
-    width: min(calc(100dvw * 16 / 9), calc(100dvh - 84px));
+    top: 50%;
+    width: min(calc(100dvw * 16 / 9), 100dvh);
     height: 100dvw;
     transform: translate(-50%, -50%) rotate(-90deg);
     border: none !important;
@@ -557,63 +556,50 @@
   animation: pop 0.45s ease-out;
 }
 
-/* Barra de controles touch — fija en la parte INFERIOR, funciona en portrait Y landscape.
-   El canvas rotado termina ARRIBA de esta zona, sin superposición.
-   ◀ ▶ a la izquierda, A a la derecha, todo en línea horizontal. */
-.touchControlsPortrait {
+/* Zona de gestos táctiles — cubre el canvas, invisible al usuario */
+.gestureOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  touch-action: none;
   display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 84px;
-  z-index: 40;
-  pointer-events: none;
-  background: rgba(0, 0, 0, 0.55);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-/* La barra aparece en CUALQUIER orientación en dispositivos touch */
 @media (pointer: coarse) {
-  .touchControlsPortrait {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
-    padding-bottom: env(safe-area-inset-bottom);
+  .gestureOverlay {
+    display: block;
   }
 }
 
-/* Flechas ◀ ▶ — lado izquierdo, en línea horizontal */
-.padPortrait {
+/* Hint que aparece los primeros 2.5s de partida */
+.touchHint {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  right: 0;
   display: flex;
-  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 14px;
+  z-index: 12;
   pointer-events: none;
+  font-size: 7px;
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 1px 1px 0 #000;
+  animation: touchHintFade 2.5s ease-out forwards;
 }
 
-/* Botón A — lado derecho */
-.jumpPortrait {
-  width: 68px;
-  height: 68px;
-  font-size: 20px;
-  background: rgba(206, 36, 36, 0.55);
-  pointer-events: all;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-  font-family: inherit;
-  color: #fff;
-  border: 2px solid rgba(255, 255, 255, 0.45);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
+.touchHintJump {
+  font-size: 6px;
+  color: rgba(255, 233, 78, 0.85);
+  text-align: center;
 }
 
-.jumpPortrait:active {
-  background: rgba(255, 233, 78, 0.6);
-  color: #1a1a2e;
-  transform: scale(0.95);
+@keyframes touchHintFade {
+  0%, 40% { opacity: 1; }
+  100%     { opacity: 0; }
 }
 
 .posterImg {

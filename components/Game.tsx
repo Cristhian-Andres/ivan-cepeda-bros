@@ -555,12 +555,15 @@ export default function Game() {
   const [posterVisible, setPosterVisible] = useState(false);
   const [frailejonUrl, setFrailejonUrl] = useState("");
   const [portraitIntroVisible, setPortraitIntroVisible] = useState(false);
+  const [isTouch, setIsTouch] = useState(false);
+  const [touchHintVisible, setTouchHintVisible] = useState(false);
 
   const phaseRef = useRef<Phase>("menu");
   const apiRef = useRef<{ startGame: () => void } | null>(null);
   const inputRef = useRef({ left: false, right: false, jump: false });
   const posterTimerRef = useRef<number | null>(null);
   const introShownRef = useRef(false);
+  const gestureRef = useRef(new Map<number, { sx: number; sy: number; t: number; side: "left" | "right" }>());
 
   const setPhaseBoth = (p: Phase) => {
     phaseRef.current = p;
@@ -588,6 +591,18 @@ export default function Game() {
     window.addEventListener("resize", check);
     return () => window.removeEventListener("resize", check);
   }, []);
+
+  useEffect(() => {
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  useEffect(() => {
+    if (phase === "playing" && isTouch) {
+      setTouchHintVisible(true);
+      const t = window.setTimeout(() => setTouchHintVisible(false), 2500);
+      return () => window.clearTimeout(t);
+    }
+  }, [phase, isTouch]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1588,10 +1603,61 @@ export default function Game() {
 
   const handleStart = () => apiRef.current?.startGame();
 
-  // controles táctiles
-  const press = (key: "left" | "right" | "jump", down: boolean) => (e: React.PointerEvent) => {
+  // Controles táctiles por gestos: mitad izquierda/derecha = mover, swipe arriba = saltar
+  const handleGestureDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
-    inputRef.current[key] = down;
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const portrait = window.innerHeight > window.innerWidth;
+    // En portrait con rotate(-90deg): game-left aparece abajo de la pantalla → clientY > mitad
+    const side: "left" | "right" = portrait
+      ? e.clientY > rect.top + rect.height / 2 ? "left" : "right"
+      : e.clientX < rect.left + rect.width / 2 ? "left" : "right";
+    gestureRef.current.set(e.pointerId, { sx: e.clientX, sy: e.clientY, t: Date.now(), side });
+    inputRef.current[side] = true;
+  };
+
+  const handleGestureMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const g = gestureRef.current.get(e.pointerId);
+    if (!g) return;
+    const portrait = window.innerHeight > window.innerWidth;
+    const dx = e.clientX - g.sx;
+    const dy = e.clientY - g.sy;
+    // En portrait: swipe izquierda = jump (game-up). En landscape: swipe arriba = jump
+    const jumped = portrait ? dx < -35 : dy < -35;
+    if (jumped) {
+      gestureRef.current.delete(e.pointerId);
+      inputRef.current[g.side] = false;
+      inputRef.current.jump = true;
+      window.setTimeout(() => { inputRef.current.jump = false; }, 150);
+    }
+  };
+
+  const handleGestureUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const g = gestureRef.current.get(e.pointerId);
+    if (!g) return;
+    gestureRef.current.delete(e.pointerId);
+    inputRef.current[g.side] = false;
+    const dx = e.clientX - g.sx;
+    const dy = e.clientY - g.sy;
+    const elapsed = Date.now() - g.t;
+    const portrait = window.innerHeight > window.innerWidth;
+    const swipeJump = portrait ? dx < -25 : dy < -25;
+    const quickTap = elapsed < 220 && Math.abs(dx) < 15 && Math.abs(dy) < 15;
+    if (swipeJump || quickTap) {
+      inputRef.current.jump = true;
+      window.setTimeout(() => { inputRef.current.jump = false; }, 150);
+    }
+  };
+
+  const handleGestureCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    const g = gestureRef.current.get(e.pointerId);
+    if (g) {
+      inputRef.current[g.side] = false;
+      gestureRef.current.delete(e.pointerId);
+    }
   };
 
   const playing = phase === "playing" || phase === "dying" || phase === "win";
@@ -1661,40 +1727,23 @@ export default function Game() {
               ⛶
             </button>
 
-            <div className={styles.touchControls}>
-              <div className={styles.padLeft}>
-                <button
-                  className={styles.padBtn}
-                  onPointerDown={press("left", true)}
-                  onPointerUp={press("left", false)}
-                  onPointerLeave={press("left", false)}
-                  onPointerCancel={press("left", false)}
-                  onContextMenu={(e) => e.preventDefault()}
-                >
-                  ◀
-                </button>
-                <button
-                  className={styles.padBtn}
-                  onPointerDown={press("right", true)}
-                  onPointerUp={press("right", false)}
-                  onPointerLeave={press("right", false)}
-                  onPointerCancel={press("right", false)}
-                  onContextMenu={(e) => e.preventDefault()}
-                >
-                  ▶
-                </button>
+            {/* Zona de gestos táctiles — cubre todo el canvas, invisible */}
+            <div
+              className={styles.gestureOverlay}
+              onPointerDown={handleGestureDown}
+              onPointerMove={handleGestureMove}
+              onPointerUp={handleGestureUp}
+              onPointerCancel={handleGestureCancel}
+            />
+
+            {/* Hint táctil — aparece 2.5s al iniciar partida */}
+            {touchHintVisible && (
+              <div className={styles.touchHint}>
+                <span>◀ MOVER IZQ</span>
+                <span className={styles.touchHintJump}>↑ DESLIZA O TOCA = SALTA</span>
+                <span>MOVER DER ▶</span>
               </div>
-              <button
-                className={styles.jumpBtn}
-                onPointerDown={press("jump", true)}
-                onPointerUp={press("jump", false)}
-                onPointerLeave={press("jump", false)}
-                onPointerCancel={press("jump", false)}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                A
-              </button>
-            </div>
+            )}
 
             <p className={styles.creditInGame}>
               By{" "}
@@ -1732,11 +1781,19 @@ export default function Game() {
                 ▶ EMPEZAR
               </button>
               <p className={styles.hint}>
-                MUÉVETE CON ◀ ▶ Y SALTA CON A
-                <br />
-                EN PC: FLECHAS + ESPACIO
-                <br />
-                LLEGA A LA CASA DE NARIÑO
+                {isTouch ? (
+                  <>
+                    TOCA LA PANTALLA PARA JUGAR
+                    <br />
+                    ◀ IZQ · DER ▶ · DESLIZA ↑ SALTA
+                  </>
+                ) : (
+                  <>
+                    FLECHAS O A/D PARA MOVER
+                    <br />
+                    ESPACIO / ↑ / W PARA SALTAR
+                  </>
+                )}
               </p>
               <p className={styles.hintIos}>
                 iPhone: agrega a inicio para
@@ -1808,43 +1865,6 @@ export default function Game() {
         <div className={styles.scanlines} />
       </div>
 
-      {/* Controles portrait — fixed fuera del wrapper, se quedan en portrait (abajo de la pantalla) */}
-      {playing && (
-        <div className={styles.touchControlsPortrait}>
-          <div className={styles.padPortrait}>
-            <button
-              className={styles.padBtn}
-              onPointerDown={press("left", true)}
-              onPointerUp={press("left", false)}
-              onPointerLeave={press("left", false)}
-              onPointerCancel={press("left", false)}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              ◀
-            </button>
-            <button
-              className={styles.padBtn}
-              onPointerDown={press("right", true)}
-              onPointerUp={press("right", false)}
-              onPointerLeave={press("right", false)}
-              onPointerCancel={press("right", false)}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              ▶
-            </button>
-          </div>
-          <button
-            className={styles.jumpPortrait}
-            onPointerDown={press("jump", true)}
-            onPointerUp={press("jump", false)}
-            onPointerLeave={press("jump", false)}
-            onPointerCancel={press("jump", false)}
-            onContextMenu={(e) => e.preventDefault()}
-          >
-            A
-          </button>
-        </div>
-      )}
     </>
   );
 }
