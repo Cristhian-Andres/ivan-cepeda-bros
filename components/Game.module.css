@@ -79,14 +79,15 @@
 }
 
 /* Móvil portrait: rotar el wrapper -90° → el juego aparece en landscape automáticamente.
-   CSS height (= ancho visual) = 100dvw.
-   CSS width  (= alto visual)  = 16:9 del ancho. */
+   Se reservan 92px en la parte inferior del portrait para la zona de controles,
+   así los botones NO se superponen al canvas del juego. */
 @media (orientation: portrait) and (pointer: coarse) {
   .wrapper {
     position: fixed;
     left: 50%;
-    top: 50%;
-    width: min(calc(100dvw * 16 / 9), 100dvh);
+    /* Centrar en el espacio disponible sobre la zona de controles */
+    top: calc((100dvh - 92px) / 2);
+    width: min(calc(100dvw * 16 / 9), calc(100dvh - 92px));
     height: 100dvw;
     transform: translate(-50%, -50%) rotate(-90deg);
     border: none !important;
@@ -558,41 +559,45 @@
   animation: pop 0.45s ease-out;
 }
 
-/* Controles táctiles portrait — fuera del wrapper rotado, fijos en la pantalla.
-   Se ubican a izquierda (◀ ▶) y derecha (A) donde descansan los pulgares
-   cuando el usuario sostiene el celular en portrait mirando el juego en landscape. */
+/* Zona de controles portrait — barra fija de 92px en la parte INFERIOR del portrait.
+   El canvas rotado termina ARRIBA de esta zona, sin superposición.
+   ◀ ▶ a la izquierda, A a la derecha, todo en línea horizontal. */
 .touchControlsPortrait {
   display: none;
   position: fixed;
-  inset: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 92px;
   z-index: 40;
   pointer-events: none;
+  background: rgba(0, 0, 0, 0.55);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 @media (orientation: portrait) and (pointer: coarse) {
   .touchControlsPortrait {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }
 
-/* Flechas ◀ ▶ en la esquina INFERIOR IZQUIERDA del portrait */
+/* Flechas ◀ ▶ — lado izquierdo, en línea horizontal */
 .padPortrait {
-  position: absolute;
-  left: calc(10px + env(safe-area-inset-left));
-  bottom: calc(10px + env(safe-area-inset-bottom));
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  pointer-events: none;
 }
 
-/* Botón A en la esquina INFERIOR DERECHA del portrait */
+/* Botón A — lado derecho */
 .jumpPortrait {
-  position: absolute;
-  right: calc(10px + env(safe-area-inset-right));
-  bottom: calc(10px + env(safe-area-inset-bottom));
-  width: 72px;
-  height: 72px;
+  width: 68px;
+  height: 68px;
   font-size: 20px;
-  background: rgba(206, 36, 36, 0.5);
+  background: rgba(206, 36, 36, 0.55);
   pointer-events: all;
   touch-action: none;
   user-select: none;
@@ -603,6 +608,7 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 
 .jumpPortrait:active {
