@@ -102,7 +102,6 @@
   }
   /* Ocultar solo lo que no aplica en portrait rotado */
   .worldTag     { display: none !important; }
-  .creditInGame { display: none !important; }
   .touchControls { display: none !important; }
   .fsBtn        { display: none !important; }
 
@@ -492,6 +491,14 @@
   z-index: 10;
   pointer-events: none;
   line-height: 1.6;
+}
+
+/* En móvil touch: subir el crédito por encima de los botones (68px + 10px base + margen) */
+@media (pointer: coarse) {
+  .creditInGame {
+    bottom: 84px;
+    font-size: 6px;
+  }
 }
 
 .creditInGame a {
