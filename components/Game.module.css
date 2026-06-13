@@ -1,24 +1,26 @@
-/* Overlay de orientación portrait — CSS puro, sin JS */
-.portraitWarning {
-  display: none;
+/* Intro portrait — controlado por JS, auto-dismiss 2s */
+.portraitIntro {
   position: fixed;
   inset: 0;
   z-index: 200;
   background: #0d0d1a;
   color: #fff;
   font-family: var(--font-press-start), monospace;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   gap: 16px;
   padding: 24px;
+  animation: introFade 2s ease-in-out forwards;
+  pointer-events: none;
 }
 
-@media (orientation: portrait) and (pointer: coarse) {
-  .portraitWarning {
-    display: flex;
-  }
+@keyframes introFade {
+  0%   { opacity: 1; }
+  60%  { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .rotateIcon {
@@ -74,6 +76,61 @@
     border-radius: 24px;
     box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
   }
+}
+
+/* Móvil portrait: rotar el wrapper -90° → el juego aparece en landscape automáticamente.
+   CSS height (= ancho visual) = 100dvw.
+   CSS width  (= alto visual)  = 16:9 del ancho. */
+@media (orientation: portrait) and (pointer: coarse) {
+  .wrapper {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: min(calc(100dvw * 16 / 9), 100dvh);
+    height: 100dvw;
+    transform: translate(-50%, -50%) rotate(-90deg);
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    max-width: none !important;
+  }
+  /* Ocultar elementos dentro del wrapper que quedarían girados o sobrantes */
+  .hud          { display: none !important; }
+  .worldTag     { display: none !important; }
+  .creditInGame { display: none !important; }
+  .touchControls { display: none !important; }
+  .fsBtn        { display: none !important; }
+
+  /* Panel del menú: compacto, sin ocupar todo el ancho del wrapper rotado */
+  .overlay {
+    padding: 10px 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .panel {
+    padding: 12px 14px;
+    min-width: unset;
+    max-width: 280px;
+    width: auto;
+    max-height: 100%;
+    overflow-y: auto;
+  }
+  .menuLogo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 5px;
+  }
+  .title    { font-size: 13px; margin-bottom: 5px; }
+  .titleWin { font-size: 12px; margin-bottom: 5px; }
+  .titleBad { font-size: 12px; margin-bottom: 8px; }
+  .subtitle { font-size: 6px; margin-bottom: 8px; }
+  .scoresRow { margin-bottom: 8px; gap: 8px; }
+  .scoreItem { font-size: 6px; line-height: 1.6; }
+  .scoreItem b { font-size: 10px; }
+  .btn { padding: 10px 18px; font-size: 9px; }
+  .hint { font-size: 5px; margin-top: 7px; line-height: 1.8; }
+  .hintIos { font-size: 4px; margin-top: 4px; }
+  .credit { font-size: 6px; }
 }
 
 .canvas {
@@ -281,7 +338,7 @@
   justify-content: center;
   align-items: center;
   padding: 16px;
-  background: rgba(0, 0, 30, 0.35);
+  background: rgba(4, 4, 22, 0.95);
 }
 
 .panel {
@@ -499,6 +556,59 @@
   justify-content: center;
   cursor: pointer;
   animation: pop 0.45s ease-out;
+}
+
+/* Controles táctiles portrait — fuera del wrapper rotado, fijos en la pantalla.
+   Se ubican a izquierda (◀ ▶) y derecha (A) donde descansan los pulgares
+   cuando el usuario sostiene el celular en portrait mirando el juego en landscape. */
+.touchControlsPortrait {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .touchControlsPortrait {
+    display: block;
+  }
+}
+
+/* Flechas ◀ ▶ en el lado IZQUIERDO del portrait, parte baja lateral */
+.padPortrait {
+  position: absolute;
+  left: calc(8px + env(safe-area-inset-left));
+  bottom: calc(18% + env(safe-area-inset-bottom));
+  display: flex;
+  gap: 10px;
+}
+
+/* Botón A en el lado DERECHO del portrait, parte baja lateral */
+.jumpPortrait {
+  position: absolute;
+  right: calc(8px + env(safe-area-inset-right));
+  bottom: calc(18% + env(safe-area-inset-bottom));
+  width: 72px;
+  height: 72px;
+  font-size: 20px;
+  background: rgba(206, 36, 36, 0.5);
+  pointer-events: all;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: inherit;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+
+.jumpPortrait:active {
+  background: rgba(255, 233, 78, 0.6);
+  color: #1a1a2e;
+  transform: scale(0.95);
 }
 
 .posterImg {

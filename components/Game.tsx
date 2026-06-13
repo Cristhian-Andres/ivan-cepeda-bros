@@ -554,11 +554,13 @@ export default function Game() {
   const [winVisible, setWinVisible] = useState(false);
   const [posterVisible, setPosterVisible] = useState(false);
   const [frailejonUrl, setFrailejonUrl] = useState("");
+  const [portraitIntroVisible, setPortraitIntroVisible] = useState(false);
 
   const phaseRef = useRef<Phase>("menu");
   const apiRef = useRef<{ startGame: () => void } | null>(null);
   const inputRef = useRef({ left: false, right: false, jump: false });
   const posterTimerRef = useRef<number | null>(null);
+  const introShownRef = useRef(false);
 
   const setPhaseBoth = (p: Phase) => {
     phaseRef.current = p;
@@ -569,6 +571,22 @@ export default function Game() {
     try {
       setBest(Number(localStorage.getItem("cb-best") || 0));
     } catch {}
+  }, []);
+
+  // Detectar portrait en touch y mostrar intro de orientación una sola vez
+  useEffect(() => {
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
+    if (!isTouch) return;
+    const check = () => {
+      if (window.innerHeight > window.innerWidth && !introShownRef.current) {
+        introShownRef.current = true;
+        setPortraitIntroVisible(true);
+        setTimeout(() => setPortraitIntroVisible(false), 2000);
+      }
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, []);
 
   useEffect(() => {
@@ -1588,203 +1606,245 @@ export default function Game() {
 
   return (
     <>
-      {/* Overlay "Gira tu teléfono" — visible sólo en portrait + touch */}
-      <div className={styles.portraitWarning}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo.webp" alt="Iván Cepeda" className={styles.rotateIcon} />
-        <p className={styles.rotateTitle}>GIRA TU TELÉFONO</p>
+      {/* Intro portrait — JS-controlled, se muestra 2s al abrir en portrait */}
+      {portraitIntroVisible && (
+        <div className={styles.portraitIntro}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.webp" alt="Cepeda Bros" className={styles.rotateIcon} />
+          <p className={styles.rotateTitle}>GIRA TU TELÉFONO</p>
+        </div>
+      )}
+
+      {/* Canvas layer — en portrait el CSS lo rota -90° automáticamente */}
+      <div className={styles.wrapper}>
+        <canvas ref={canvasRef} width={W} height={H} className={styles.canvas} />
+
+        {playing && (
+          <>
+            <div className={styles.hud}>
+              <div className={styles.scoreBox}>
+                PUNTOS
+                <br />
+                <span>{score}</span>
+              </div>
+              <div className={styles.scoreBox}>
+                FRAILEJONES
+                <br />
+                <span>{coins}</span>
+              </div>
+              <div className={styles.scoreBox}>
+                VIDAS
+                <br />
+                <span className={styles.livesIcons}>
+                  {Array.from({ length: MAX_LIVES }, (_, i) =>
+                    frailejonUrl ? (
+                      <img
+                        key={i}
+                        src={frailejonUrl}
+                        alt="frailejón"
+                        className={i < lives ? styles.fjAlive : styles.fjDead}
+                      />
+                    ) : null
+                  )}
+                </span>
+              </div>
+              <div className={styles.scoreBox}>
+                MÁXIMO
+                <br />
+                <span>{best}</span>
+              </div>
+            </div>
+
+            <div className={styles.worldTag}>MUNDO 1-1</div>
+
+            <button className={styles.fsBtn} onClick={toggleFullscreen} aria-label="Pantalla completa">
+              ⛶
+            </button>
+
+            <div className={styles.touchControls}>
+              <div className={styles.padLeft}>
+                <button
+                  className={styles.padBtn}
+                  onPointerDown={press("left", true)}
+                  onPointerUp={press("left", false)}
+                  onPointerLeave={press("left", false)}
+                  onPointerCancel={press("left", false)}
+                  onContextMenu={(e) => e.preventDefault()}
+                >
+                  ◀
+                </button>
+                <button
+                  className={styles.padBtn}
+                  onPointerDown={press("right", true)}
+                  onPointerUp={press("right", false)}
+                  onPointerLeave={press("right", false)}
+                  onPointerCancel={press("right", false)}
+                  onContextMenu={(e) => e.preventDefault()}
+                >
+                  ▶
+                </button>
+              </div>
+              <button
+                className={styles.jumpBtn}
+                onPointerDown={press("jump", true)}
+                onPointerUp={press("jump", false)}
+                onPointerLeave={press("jump", false)}
+                onPointerCancel={press("jump", false)}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                A
+              </button>
+            </div>
+
+            <p className={styles.creditInGame}>
+              By{" "}
+              <a
+                href="https://www.instagram.com/cristhian_lunaa"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Cristhian Luna
+              </a>{" "}
+              - Team Cauca
+            </p>
+          </>
+        )}
+
+        {/* Overlays dentro del wrapper: rotan con él en portrait → aparecen en landscape */}
+        {phase === "dying" && (
+          <div className={styles.banner}>
+            <p className={styles.bannerBad}>¡TE ATRAPARON!</p>
+          </div>
+        )}
+
+        {phase === "menu" && (
+          <div className={styles.overlay}>
+            <div className={styles.panel}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo.webp" alt="Cepeda Bros" className={styles.menuLogo} />
+              <p className={styles.subtitle}>RUMBO A LA CASA DE NARIÑO</p>
+              <div className={styles.scoresRow}>
+                <div className={styles.scoreItem}>
+                  MÁXIMO<b>{best}</b>
+                </div>
+              </div>
+              <button className={styles.btn} onClick={handleStart}>
+                ▶ EMPEZAR
+              </button>
+              <p className={styles.hint}>
+                MUÉVETE CON ◀ ▶ Y SALTA CON A
+                <br />
+                EN PC: FLECHAS + ESPACIO
+                <br />
+                LLEGA A LA CASA DE NARIÑO
+              </p>
+              <p className={styles.hintIos}>
+                iPhone: agrega a inicio para
+                <br />
+                jugar en pantalla completa
+              </p>
+            </div>
+            <p className={styles.credit}>
+              By{" "}
+              <a
+                href="https://www.instagram.com/cristhian_lunaa"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Cristhian Luna
+              </a>{" "}
+              - Team Cauca
+            </p>
+          </div>
+        )}
+
+        {winVisible && (
+          <div className={styles.overlay}>
+            <div className={styles.panel}>
+              <h1 className={styles.titleWin}>¡GANASTE!</h1>
+              <p className={styles.subtitle}>LLEGASTE A LA CASA DE NARIÑO</p>
+              <div className={styles.scoresRow}>
+                <div className={styles.scoreItem}>
+                  PUNTOS<b>{score}</b>
+                </div>
+                <div className={styles.scoreItem}>
+                  MÁXIMO<b>{best}</b>
+                </div>
+              </div>
+              <button className={styles.btn} onClick={handleStart}>
+                ↺ JUGAR DE NUEVO
+              </button>
+            </div>
+          </div>
+        )}
+
+        {gameOverVisible && (
+          <div className={styles.overlay}>
+            <div className={styles.panel}>
+              <h1 className={styles.titleBad}>GAME OVER</h1>
+              <div className={styles.scoresRow}>
+                <div className={styles.scoreItem}>
+                  PUNTOS<b>{score}</b>
+                </div>
+                <div className={styles.scoreItem}>
+                  MÁXIMO<b>{best}</b>
+                </div>
+              </div>
+              <button className={styles.btn} onClick={handleStart}>
+                ↺ REINTENTAR
+              </button>
+            </div>
+          </div>
+        )}
+
+        {posterVisible && (
+          <div className={styles.posterOverlay} onClick={() => setPosterVisible(false)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/poster.jpg" className={styles.posterImg} alt="Campaña Iván Cepeda" />
+            <p className={styles.posterHint}>toca para continuar</p>
+          </div>
+        )}
+
+        <div className={styles.scanlines} />
       </div>
 
-    <div className={styles.wrapper}>
-      <canvas ref={canvasRef} width={W} height={H} className={styles.canvas} />
-
+      {/* Controles portrait — fixed fuera del wrapper, se quedan en portrait (abajo de la pantalla) */}
       {playing && (
-        <>
-          <div className={styles.hud}>
-            <div className={styles.scoreBox}>
-              PUNTOS
-              <br />
-              <span>{score}</span>
-            </div>
-            <div className={styles.scoreBox}>
-              FRAILEJONES
-              <br />
-              <span>{coins}</span>
-            </div>
-            <div className={styles.scoreBox}>
-              VIDAS
-              <br />
-              <span className={styles.livesIcons}>
-                {Array.from({ length: MAX_LIVES }, (_, i) =>
-                  frailejonUrl ? (
-                    <img
-                      key={i}
-                      src={frailejonUrl}
-                      alt="frailejón"
-                      className={i < lives ? styles.fjAlive : styles.fjDead}
-                    />
-                  ) : null
-                )}
-              </span>
-            </div>
-            <div className={styles.scoreBox}>
-              MÁXIMO
-              <br />
-              <span>{best}</span>
-            </div>
-          </div>
-
-          <div className={styles.worldTag}>MUNDO 1-1</div>
-
-          <button className={styles.fsBtn} onClick={toggleFullscreen} aria-label="Pantalla completa">
-            ⛶
-          </button>
-
-          <div className={styles.touchControls}>
-            <div className={styles.padLeft}>
-              <button
-                className={styles.padBtn}
-                onPointerDown={press("left", true)}
-                onPointerUp={press("left", false)}
-                onPointerLeave={press("left", false)}
-                onPointerCancel={press("left", false)}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                ◀
-              </button>
-              <button
-                className={styles.padBtn}
-                onPointerDown={press("right", true)}
-                onPointerUp={press("right", false)}
-                onPointerLeave={press("right", false)}
-                onPointerCancel={press("right", false)}
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                ▶
-              </button>
-            </div>
+        <div className={styles.touchControlsPortrait}>
+          <div className={styles.padPortrait}>
             <button
-              className={styles.jumpBtn}
-              onPointerDown={press("jump", true)}
-              onPointerUp={press("jump", false)}
-              onPointerLeave={press("jump", false)}
-              onPointerCancel={press("jump", false)}
+              className={styles.padBtn}
+              onPointerDown={press("left", true)}
+              onPointerUp={press("left", false)}
+              onPointerLeave={press("left", false)}
+              onPointerCancel={press("left", false)}
               onContextMenu={(e) => e.preventDefault()}
             >
-              A
+              ◀
             </button>
-          </div>
-
-          <p className={styles.creditInGame}>
-            By{" "}
-            <a
-              href="https://www.instagram.com/cristhian_lunaa"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              className={styles.padBtn}
+              onPointerDown={press("right", true)}
+              onPointerUp={press("right", false)}
+              onPointerLeave={press("right", false)}
+              onPointerCancel={press("right", false)}
+              onContextMenu={(e) => e.preventDefault()}
             >
-              Cristhian Luna
-            </a>{" "}
-            - Team Cauca
-          </p>
-        </>
-      )}
-
-      {phase === "dying" && (
-        <div className={styles.banner}>
-          <p className={styles.bannerBad}>¡TE ATRAPARON!</p>
-        </div>
-      )}
-
-      {phase === "menu" && (
-        <div className={styles.overlay}>
-          <div className={styles.panel}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo.webp" alt="Iván Cepeda por la vida" className={styles.menuLogo} />
-            <p className={styles.subtitle}>RUMBO A LA CASA DE NARIÑO</p>
-            <div className={styles.scoresRow}>
-              <div className={styles.scoreItem}>
-                MÁXIMO<b>{best}</b>
-              </div>
-            </div>
-            <button className={styles.btn} onClick={handleStart}>
-              ▶ EMPEZAR
-            </button>
-            <p className={styles.hint}>
-              MUÉVETE CON ◀ ▶ Y SALTA CON A
-              <br />
-              EN PC: FLECHAS + ESPACIO
-              <br />
-              LLEGA A LA CASA DE NARIÑO
-            </p>
-            <p className={styles.hintIos}>
-              iPhone: agrega a inicio para
-              <br />
-              jugar en pantalla completa
-            </p>
-          </div>
-          <p className={styles.credit}>
-            By{" "}
-            <a
-              href="https://www.instagram.com/cristhian_lunaa"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Cristhian Luna
-            </a>{" "}
-            - Team Cauca
-          </p>
-        </div>
-      )}
-
-      {winVisible && (
-        <div className={styles.overlay}>
-          <div className={styles.panel}>
-            <h1 className={styles.titleWin}>¡GANASTE!</h1>
-            <p className={styles.subtitle}>LLEGASTE A LA CASA DE NARIÑO</p>
-            <div className={styles.scoresRow}>
-              <div className={styles.scoreItem}>
-                PUNTOS<b>{score}</b>
-              </div>
-              <div className={styles.scoreItem}>
-                MÁXIMO<b>{best}</b>
-              </div>
-            </div>
-            <button className={styles.btn} onClick={handleStart}>
-              ↺ JUGAR DE NUEVO
+              ▶
             </button>
           </div>
+          <button
+            className={styles.jumpPortrait}
+            onPointerDown={press("jump", true)}
+            onPointerUp={press("jump", false)}
+            onPointerLeave={press("jump", false)}
+            onPointerCancel={press("jump", false)}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            A
+          </button>
         </div>
       )}
-
-      {gameOverVisible && (
-        <div className={styles.overlay}>
-          <div className={styles.panel}>
-            <h1 className={styles.titleBad}>GAME OVER</h1>
-            <div className={styles.scoresRow}>
-              <div className={styles.scoreItem}>
-                PUNTOS<b>{score}</b>
-              </div>
-              <div className={styles.scoreItem}>
-                MÁXIMO<b>{best}</b>
-              </div>
-            </div>
-            <button className={styles.btn} onClick={handleStart}>
-              ↺ REINTENTAR
-            </button>
-          </div>
-        </div>
-      )}
-
-      {posterVisible && (
-        <div className={styles.posterOverlay} onClick={() => setPosterVisible(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/poster.jpg" className={styles.posterImg} alt="Campaña Iván Cepeda" />
-          <p className={styles.posterHint}>toca para continuar</p>
-        </div>
-      )}
-
-      <div className={styles.scanlines} />
-    </div>
     </>
   );
 }
