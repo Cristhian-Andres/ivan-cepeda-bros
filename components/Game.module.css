@@ -54,12 +54,16 @@
   background: #000;
 }
 
-/* Móvil en landscape: llena todo el alto disponible */
+/* Móvil en landscape: deja 84px en la parte inferior para la barra de controles */
 @media (orientation: landscape) and (pointer: coarse) {
   .wrapper {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
     width: auto;
-    height: 100dvh;
-    max-width: 100vw;
+    height: calc(100dvh - 84px);
+    max-width: 100dvw;
     border-radius: 0;
     border: none;
     box-shadow: none;
@@ -86,8 +90,8 @@
     position: fixed;
     left: 50%;
     /* Centrar en el espacio disponible sobre la zona de controles */
-    top: calc((100dvh - 92px) / 2);
-    width: min(calc(100dvw * 16 / 9), calc(100dvh - 92px));
+    top: calc((100dvh - 84px) / 2);
+    width: min(calc(100dvw * 16 / 9), calc(100dvh - 84px));
     height: 100dvw;
     transform: translate(-50%, -50%) rotate(-90deg);
     border: none !important;
@@ -222,19 +226,13 @@
   }
 }
 
-/* ----- controles táctiles (solo pantallas táctiles) ----- */
+/* ----- controles táctiles internos (SOLO desktop/teclado, nunca en touch) ----- */
 .touchControls {
   position: absolute;
   inset: 0;
   z-index: 30;
   pointer-events: none;
-  display: none;
-}
-
-@media (pointer: coarse) {
-  .touchControls {
-    display: block;
-  }
+  display: none; /* siempre oculto; la barra externa maneja touch */
 }
 
 .padLeft {
@@ -559,7 +557,7 @@
   animation: pop 0.45s ease-out;
 }
 
-/* Zona de controles portrait — barra fija de 92px en la parte INFERIOR del portrait.
+/* Barra de controles touch — fija en la parte INFERIOR, funciona en portrait Y landscape.
    El canvas rotado termina ARRIBA de esta zona, sin superposición.
    ◀ ▶ a la izquierda, A a la derecha, todo en línea horizontal. */
 .touchControlsPortrait {
@@ -568,14 +566,15 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 92px;
+  height: 84px;
   z-index: 40;
   pointer-events: none;
   background: rgba(0, 0, 0, 0.55);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-@media (orientation: portrait) and (pointer: coarse) {
+/* La barra aparece en CUALQUIER orientación en dispositivos touch */
+@media (pointer: coarse) {
   .touchControlsPortrait {
     display: flex;
     align-items: center;
