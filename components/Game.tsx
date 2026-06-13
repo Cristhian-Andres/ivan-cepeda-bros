@@ -672,6 +672,18 @@ export default function Game() {
     document.addEventListener("touchstart", unlockAudio);
     document.addEventListener("keydown", unlockAudio);
 
+    // Pausa el audio al minimizar/cambiar de pestaña; reanuda al volver
+    const onAudioVisibility = () => {
+      if (!menuAudio) return;
+      if (document.hidden) {
+        menuAudio.pause();
+      } else {
+        const ph = phaseRef.current;
+        if (ph === "playing" || ph === "menu") menuAudio.play().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onAudioVisibility);
+
     function ensureAudio() {
       if (!actx) {
         try {
@@ -753,6 +765,9 @@ export default function Game() {
       pops: [] as { x: number; y: number; vy: number; t: number; word: string; col: string }[],
       fireworks: [] as { x: number; y: number; vx: number; vy: number; t: number; col: string }[],
       fwTimer: 0,
+      crowd: [] as { x: number; vx: number; skin: string; shirt: string; stopX: number; stopped: boolean; bob: number }[],
+      crowdSpawnT: 0,
+      winLiftY: 0,
     };
 
     function syncHud() {
@@ -774,6 +789,7 @@ export default function Game() {
 
     function startGame() {
       ensureAudio();
+      stopMenuSong();
       playMenuSong();
       // Pantalla completa + bloqueo de orientación (Android/Chrome)
       if (!document.fullscreenElement) {
@@ -791,6 +807,9 @@ export default function Game() {
       s.winScored = false;
       s.pops = [];
       s.fireworks = [];
+      s.crowd = [];
+      s.crowdSpawnT = 0;
+      s.winLiftY = 0;
       resetPlayer();
       setGameOverVisible(false);
       setWinVisible(false);
@@ -816,6 +835,7 @@ export default function Game() {
 
     function gameOver() {
       saveBest();
+      stopMenuSong();
       setPhaseBoth("over");
       window.setTimeout(() => setGameOverVisible(true), 700);
     }
@@ -831,6 +851,7 @@ export default function Game() {
     function winLevel() {
       if (phaseRef.current !== "playing") return;
       sfxWin();
+      stopMenuSong();
       s.winT = 0;
       if (!s.winScored) {
         s.winScored = true;
@@ -840,16 +861,16 @@ export default function Game() {
       saveBest();
       setPhaseBoth("win");
       if (posterTimerRef.current) clearTimeout(posterTimerRef.current);
-      // Win overlay + poster aparecen juntos después de la animación
+      // Primero la multitud carga a Iván (~3.5s), luego aparecen el letrero y el poster juntos
       window.setTimeout(() => {
         setWinVisible(true);
         setPosterVisible(true);
-      }, 1600);
-      // Después de 5s más: cierra el poster y habilita "Jugar de nuevo"
+      }, 3500);
+      // Después de 5s en el poster → cierra poster y habilita "Jugar de nuevo"
       posterTimerRef.current = window.setTimeout(() => {
         setPosterVisible(false);
         setPlayAgainReady(true);
-      }, 1600 + 5000);
+      }, 3500 + 5000);
     }
 
     // ----- colisiones con tiles -----
@@ -1001,6 +1022,48 @@ export default function Game() {
         }
         p.vy = Math.min(p.vy + GRAV * n, MAXFALL);
         moveY(p, p.vy * n);
+
+        // ---- MULTITUD ----
+        const screenPX = Math.round(p.x - s.camX + p.w / 2);
+        const SKINS = ["#f5c5a3", "#c68642", "#8d5524", "#ffdba4", "#e8a87c"];
+        const SHIRTS = ["#ffd23f", "#ce2424", "#2b4ea0", "#ffffff", "#ff8c00", "#43b047", "#9c27b0", "#00bcd4"];
+
+        // Spawn crowd en oleadas desde los bordes durante 800–2400ms
+        if (s.winT > 800 && s.winT < 2400) {
+          s.crowdSpawnT -= dt;
+          if (s.crowdSpawnT <= 0) {
+            s.crowdSpawnT = 90 + Math.random() * 40;
+            const fromLeft = s.crowd.filter((c) => c.vx > 0).length <= s.crowd.filter((c) => c.vx < 0).length;
+            if (fromLeft) {
+              const leftCount = s.crowd.filter((c) => c.vx > 0).length;
+              const stopX = Math.max(8, screenPX - 22 - leftCount * 7);
+              s.crowd.push({ x: -10, vx: 1.7 + Math.random() * 0.7, skin: SKINS[Math.floor(Math.random() * SKINS.length)], shirt: SHIRTS[Math.floor(Math.random() * SHIRTS.length)], stopX, stopped: false, bob: Math.random() * Math.PI * 2 });
+            } else {
+              const rightCount = s.crowd.filter((c) => c.vx < 0).length;
+              const stopX = Math.min(W - 8, screenPX + 22 + rightCount * 7);
+              s.crowd.push({ x: W + 10, vx: -(1.7 + Math.random() * 0.7), skin: SKINS[Math.floor(Math.random() * SKINS.length)], shirt: SHIRTS[Math.floor(Math.random() * SHIRTS.length)], stopX, stopped: false, bob: Math.random() * Math.PI * 2 });
+            }
+          }
+        }
+
+        // Mover multitud y bobing
+        for (const cp of s.crowd) {
+          if (!cp.stopped) {
+            cp.x += cp.vx * n;
+            if ((cp.vx > 0 && cp.x >= cp.stopX) || (cp.vx < 0 && cp.x <= cp.stopX)) {
+              cp.x = cp.stopX;
+              cp.stopped = true;
+            }
+          }
+          cp.bob += 0.009 * dt;
+        }
+
+        // Iván flota hacia arriba cuando la multitud ya llegó (~2400ms)
+        if (s.winT > 2400) {
+          const liftT = s.winT - 2400;
+          s.winLiftY = Math.min(52, liftT * 0.024);
+        }
+
         // fuegos artificiales continuos y variados
         s.fwTimer -= dt;
         if (s.fwTimer <= 0) {
@@ -1519,6 +1582,49 @@ export default function Game() {
       }
     }
 
+    function drawCrowdPerson(cx: number, cy: number, skin: string, shirt: string, celebrating: boolean, flip: boolean) {
+      const g = ctx!;
+      g.save();
+      g.translate(cx, cy);
+      if (flip) g.scale(-1, 1);
+      // Cabeza
+      g.fillStyle = skin;
+      g.fillRect(-2, -14, 5, 4);
+      g.fillStyle = "#000";
+      g.fillRect(-1, -13, 1, 1);
+      g.fillRect(2, -13, 1, 1);
+      // Cuerpo
+      g.fillStyle = shirt;
+      if (celebrating) {
+        g.fillRect(-5, -13, 2, 4); // brazo izq arriba
+        g.fillRect(4, -13, 2, 4);  // brazo der arriba
+        g.fillRect(-2, -10, 5, 5); // torso
+      } else {
+        g.fillRect(-4, -11, 2, 4); // brazo izq
+        g.fillRect(3, -11, 2, 4);  // brazo der
+        g.fillRect(-2, -10, 5, 5); // torso
+      }
+      // Piernas
+      g.fillStyle = "#1a1a2e";
+      g.fillRect(-2, -5, 2, 5);
+      g.fillRect(1, -5, 2, 5);
+      g.restore();
+    }
+
+    function drawCrowd() {
+      const groundY = GROUND_ROW * TILE;
+      const p = s.player;
+      const screenPX = Math.round(p.x - s.camX + p.w / 2);
+      for (const cp of s.crowd) {
+        const bobY = cp.stopped
+          ? Math.round(Math.sin(cp.bob * 3.5) * 2)
+          : Math.round(Math.sin(cp.bob * 5) * 2.5);
+        const celebrating = cp.stopped;
+        const flip = cp.x > screenPX; // personas de la derecha miran a la izquierda
+        drawCrowdPerson(Math.round(cp.x), groundY + bobY, cp.skin, cp.shirt, celebrating, flip);
+      }
+    }
+
     function drawPlayer() {
       const p = s.player;
       const ph = phaseRef.current;
@@ -1528,10 +1634,12 @@ export default function Game() {
       } else if (!p.onGround) {
         spr = sprJump;
       } else if (Math.abs(p.vx) > 0.3 || ph === "win") {
-        spr = Math.floor(s.walkT / 110) % 2 === 0 ? sprWalk : sprIdle;
+        spr = Math.floor(s.walkT / 160) % 2 === 0 ? sprWalk : sprIdle;
       }
       const x = Math.round(p.x - s.camX + p.w / 2);
-      const y = Math.round(p.y + p.h - SPRITE_H);
+      // En la celebración Iván sube levantado por la multitud
+      const liftY = ph === "win" ? -Math.round(s.winLiftY) : 0;
+      const y = Math.round(p.y + p.h - SPRITE_H) + liftY;
       ctx!.save();
       ctx!.translate(x, y + SPRITE_H / 2);
       if (p.face < 0) ctx!.scale(-1, 1);
@@ -1580,6 +1688,7 @@ export default function Game() {
       drawCasa();
       drawMap();
       drawEnemies();
+      drawCrowd();
       drawPlayer();
       drawParticles();
     }
@@ -1621,6 +1730,7 @@ export default function Game() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("visibilitychange", onAudioVisibility);
       document.removeEventListener("click", unlockAudio);
       document.removeEventListener("touchstart", unlockAudio);
       document.removeEventListener("keydown", unlockAudio);

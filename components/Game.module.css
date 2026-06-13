@@ -68,6 +68,8 @@
     border: none;
     box-shadow: none;
   }
+  /* HUD compacto en landscape móvil */
+  .scoreBox { font-size: 6px !important; padding: 3px 6px !important; }
 }
 
 /* Desktop grande en landscape */
@@ -98,12 +100,18 @@
     box-shadow: none !important;
     max-width: none !important;
   }
-  /* Ocultar elementos dentro del wrapper que quedarían girados o sobrantes */
-  .hud          { display: none !important; }
+  /* Ocultar solo lo que no aplica en portrait rotado */
   .worldTag     { display: none !important; }
   .creditInGame { display: none !important; }
   .touchControls { display: none !important; }
   .fsBtn        { display: none !important; }
+
+  /* HUD compacto para portrait rotado */
+  .hud { gap: 4px !important; padding: 0 8px !important; top: 6px !important; }
+  .scoreBox { font-size: 5px !important; padding: 3px 5px !important; line-height: 1.5 !important; }
+  .scoreBox span { font-size: 5px !important; }
+  .livesIcons { gap: 2px !important; }
+  .fjAlive, .fjDead { width: 10px !important; }
 
   /* Panel del menú: compacto, sin ocupar todo el ancho del wrapper rotado */
   .overlay {
