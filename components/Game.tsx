@@ -429,7 +429,6 @@ const CASA_COL = 186;
 const CASA_X = CASA_COL * TILE;
 const GOAL_X = CASA_X + 104; // puerta de la casa
 const SPAWN_X = 3 * TILE;
-const ENEMY_SPAWNS = [27, 58, 95, 126];
 
 function buildLevel(): number[][] {
   const map: number[][] = Array.from({ length: ROWS }, () => new Array<number>(COLS).fill(T0));
@@ -530,10 +529,39 @@ interface Enemy {
 }
 
 function makeEnemies(): Enemy[] {
-  return ENEMY_SPAWNS.map((c) => ({
+  // Zonas de suelo válidas (evitar spawn, tuberías, huecos y zona de la casa)
+  const segs: [number, number][] = [
+    [10, 27], [33, 49], [53, 60], [65, 84],
+    [89, 116], [121, 131], [135, 160], [169, 175],
+  ];
+  const pipeBlocked = [[29, 32], [61, 64], [117, 120]];
+
+  const pool: number[] = [];
+  for (const [a, b] of segs) {
+    for (let c = a; c <= b; c++) {
+      if (!pipeBlocked.some(([p1, p2]) => c >= p1 && c <= p2)) pool.push(c);
+    }
+  }
+
+  // Fisher-Yates shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // Seleccionar 7 columnas separadas al menos 10 tiles entre sí
+  const chosen: number[] = [];
+  for (const c of pool) {
+    if (chosen.every((x) => Math.abs(x - c) >= 10)) {
+      chosen.push(c);
+      if (chosen.length >= 7) break;
+    }
+  }
+
+  return chosen.map((c) => ({
     x: c * TILE,
     y: (GROUND_ROW - 1) * TILE + 4,
-    vx: -0.55,
+    vx: -(0.45 + Math.random() * 0.3), // velocidad aleatoria 0.45–0.75
     vy: 0,
     w: 14,
     h: 12,
@@ -557,13 +585,14 @@ export default function Game() {
   const [portraitIntroVisible, setPortraitIntroVisible] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
   const [touchHintVisible, setTouchHintVisible] = useState(false);
+  const [playAgainReady, setPlayAgainReady] = useState(false);
 
   const phaseRef = useRef<Phase>("menu");
   const apiRef = useRef<{ startGame: () => void } | null>(null);
   const inputRef = useRef({ left: false, right: false, jump: false });
   const posterTimerRef = useRef<number | null>(null);
   const introShownRef = useRef(false);
-  const gestureRef = useRef(new Map<number, { sx: number; sy: number; t: number; side: "left" | "right" }>());
+  const gestureRef = useRef(new Map<number, { sx: number; sy: number; t: number; side: "left" | "right"; jumpOnly: boolean }>());
 
   const setPhaseBoth = (p: Phase) => {
     phaseRef.current = p;
@@ -599,7 +628,7 @@ export default function Game() {
   useEffect(() => {
     if (phase === "playing" && isTouch) {
       setTouchHintVisible(true);
-      const t = window.setTimeout(() => setTouchHintVisible(false), 2500);
+      const t = window.setTimeout(() => setTouchHintVisible(false), 5000);
       return () => window.clearTimeout(t);
     }
   }, [phase, isTouch]);
@@ -776,6 +805,7 @@ export default function Game() {
       setGameOverVisible(false);
       setWinVisible(false);
       setPosterVisible(false);
+      setPlayAgainReady(false);
       syncHud();
       setPhaseBoth("playing");
     }
@@ -819,9 +849,17 @@ export default function Game() {
       }
       saveBest();
       setPhaseBoth("win");
-      window.setTimeout(() => setWinVisible(true), 1600);
       if (posterTimerRef.current) clearTimeout(posterTimerRef.current);
-      posterTimerRef.current = window.setTimeout(() => setPosterVisible(true), 5000);
+      // Win overlay + poster aparecen juntos después de la animación
+      window.setTimeout(() => {
+        setWinVisible(true);
+        setPosterVisible(true);
+      }, 1600);
+      // Después de 5s más: cierra el poster y habilita "Jugar de nuevo"
+      posterTimerRef.current = window.setTimeout(() => {
+        setPosterVisible(false);
+        setPlayAgainReady(true);
+      }, 1600 + 5000);
     }
 
     // ----- colisiones con tiles -----
@@ -1603,34 +1641,46 @@ export default function Game() {
 
   const handleStart = () => apiRef.current?.startGame();
 
-  // Controles táctiles por gestos: mitad izquierda/derecha = mover, swipe arriba = saltar
+  // Controles táctiles por gestos:
+  //   - 1er toque: mitad izq/der = mover; swipe arriba o tap rápido = saltar
+  //   - 2do toque simultáneo: SIEMPRE salta (así se puede mover+saltar a la vez)
+  const triggerJump = () => {
+    inputRef.current.jump = true;
+    window.setTimeout(() => { inputRef.current.jump = false; }, 150);
+  };
+
   const handleGestureDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     (e.currentTarget as Element).setPointerCapture(e.pointerId);
+
+    // Si ya hay un toque activo de movimiento → este toque es siempre salto
+    const hasMovement = [...gestureRef.current.values()].some((g) => !g.jumpOnly);
+    if (hasMovement) {
+      gestureRef.current.set(e.pointerId, { sx: e.clientX, sy: e.clientY, t: Date.now(), side: "left", jumpOnly: true });
+      return;
+    }
+
     const rect = e.currentTarget.getBoundingClientRect();
     const portrait = window.innerHeight > window.innerWidth;
-    // En portrait con rotate(-90deg): game-left aparece abajo de la pantalla → clientY > mitad
     const side: "left" | "right" = portrait
       ? e.clientY > rect.top + rect.height / 2 ? "left" : "right"
       : e.clientX < rect.left + rect.width / 2 ? "left" : "right";
-    gestureRef.current.set(e.pointerId, { sx: e.clientX, sy: e.clientY, t: Date.now(), side });
+    gestureRef.current.set(e.pointerId, { sx: e.clientX, sy: e.clientY, t: Date.now(), side, jumpOnly: false });
     inputRef.current[side] = true;
   };
 
   const handleGestureMove = (e: React.PointerEvent<HTMLDivElement>) => {
     e.preventDefault();
     const g = gestureRef.current.get(e.pointerId);
-    if (!g) return;
+    if (!g || g.jumpOnly) return;
     const portrait = window.innerHeight > window.innerWidth;
     const dx = e.clientX - g.sx;
     const dy = e.clientY - g.sy;
-    // En portrait: swipe izquierda = jump (game-up). En landscape: swipe arriba = jump
     const jumped = portrait ? dx < -35 : dy < -35;
     if (jumped) {
       gestureRef.current.delete(e.pointerId);
       inputRef.current[g.side] = false;
-      inputRef.current.jump = true;
-      window.setTimeout(() => { inputRef.current.jump = false; }, 150);
+      triggerJump();
     }
   };
 
@@ -1639,6 +1689,12 @@ export default function Game() {
     const g = gestureRef.current.get(e.pointerId);
     if (!g) return;
     gestureRef.current.delete(e.pointerId);
+
+    if (g.jumpOnly) {
+      triggerJump();
+      return;
+    }
+
     inputRef.current[g.side] = false;
     const dx = e.clientX - g.sx;
     const dy = e.clientY - g.sy;
@@ -1646,18 +1702,14 @@ export default function Game() {
     const portrait = window.innerHeight > window.innerWidth;
     const swipeJump = portrait ? dx < -25 : dy < -25;
     const quickTap = elapsed < 220 && Math.abs(dx) < 15 && Math.abs(dy) < 15;
-    if (swipeJump || quickTap) {
-      inputRef.current.jump = true;
-      window.setTimeout(() => { inputRef.current.jump = false; }, 150);
-    }
+    if (swipeJump || quickTap) triggerJump();
   };
 
   const handleGestureCancel = (e: React.PointerEvent<HTMLDivElement>) => {
     const g = gestureRef.current.get(e.pointerId);
-    if (g) {
-      inputRef.current[g.side] = false;
-      gestureRef.current.delete(e.pointerId);
-    }
+    if (!g) return;
+    gestureRef.current.delete(e.pointerId);
+    if (!g.jumpOnly) inputRef.current[g.side] = false;
   };
 
   const playing = phase === "playing" || phase === "dying" || phase === "win";
@@ -1828,9 +1880,13 @@ export default function Game() {
                   MÁXIMO<b>{best}</b>
                 </div>
               </div>
-              <button className={styles.btn} onClick={handleStart}>
-                ↺ JUGAR DE NUEVO
-              </button>
+              {playAgainReady ? (
+                <button className={styles.btn} onClick={handleStart}>
+                  ↺ JUGAR DE NUEVO
+                </button>
+              ) : (
+                <p className={styles.hint}>CARGANDO CAMPAÑA...</p>
+              )}
             </div>
           </div>
         )}
@@ -1855,10 +1911,9 @@ export default function Game() {
         )}
 
         {posterVisible && (
-          <div className={styles.posterOverlay} onClick={() => setPosterVisible(false)}>
+          <div className={styles.posterOverlay}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/poster.jpg" className={styles.posterImg} alt="Campaña Iván Cepeda" />
-            <p className={styles.posterHint}>toca para continuar</p>
           </div>
         )}
 

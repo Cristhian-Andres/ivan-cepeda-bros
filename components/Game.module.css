@@ -588,7 +588,7 @@
   font-size: 7px;
   color: rgba(255, 255, 255, 0.7);
   text-shadow: 1px 1px 0 #000;
-  animation: touchHintFade 2.5s ease-out forwards;
+  animation: touchHintFade 5s ease-out forwards;
 }
 
 .touchHintJump {
@@ -598,7 +598,7 @@
 }
 
 @keyframes touchHintFade {
-  0%, 40% { opacity: 1; }
+  0%, 60% { opacity: 1; }
   100%     { opacity: 0; }
 }
 
