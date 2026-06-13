@@ -45,42 +45,45 @@ function isSolid(t: number): boolean {
 // Iván Cepeda estilo Mario (16x24): pelo crespo oscuro, gafas, bigote y barba,
 // saco azul oscuro abierto sobre camisa blanca.
 const CEPEDA_COLORS: Record<string, string> = {
-  H: "#241a12", // pelo crespo oscuro
-  h: "#3f2e1f", // brillo del pelo
+  H: "#1a1006", // pelo muy oscuro
+  h: "#382214", // pelo textura/brillo
   S: "#e6b289", // piel
   s: "#c4906a", // sombra piel
-  G: "#4a443c", // montura de las gafas
-  E: "#cfe0e8", // lentes
-  M: "#33261a", // bigote / barba
-  W: "#f4f4f4", // camisa blanca
-  N: "#22335c", // saco azul oscuro
-  n: "#172547", // sombra del saco
-  P: "#3a3d46", // pantalón
-  B: "#5c3a22", // zapatos
+  L: "#f2c89a", // piel iluminada (frente/nariz)
+  G: "#252018", // montura gafas negra gruesa
+  E: "#c4dce8", // lentes azulados
+  M: "#221408", // bigote / barba oscuro
+  m: "#3c2a14", // barba media
+  W: "#f6f6f4", // camisa blanca
+  N: "#1e2f58", // saco azul marino
+  n: "#12203e", // sombra del saco
+  T: "#1e4888", // corbata azul
+  P: "#383840", // pantalón gris oscuro
+  B: "#483016", // zapatos café
 };
 
 const CEPEDA_HEAD = [
   "....HHHHHHHH....",
-  "..HHHHHHHHHHHH..",
-  ".HHHHHHHHHHHHH..",
-  ".HHhHHHHHHHhHH..",
-  ".HHSSSSSSSSHH...",
+  "..HHhHHHHHHhHH..",
+  ".HHHhHHHHHHhHHH.",
+  ".HHhHHLLLHHhHH..",
+  ".HHSLLLSSSSSLHH.",
   ".HSSSSSSSSSSH...",
   ".HGGGGGGGGGGH...",
-  ".HGEEGSSGEEGH...",
+  ".HGEEGSSGEEGh...",
   ".HSSSSsSSSSSH...",
-  ".HSMMMMMMMMSH...",
-  "..SMSSssSSMS....",
+  ".HSmMMMMMMMmSH..",
+  "..SMmSssSmMmS...",
   "..SMMMMMMMMS....",
 ];
 
 const CEPEDA_BODY = [
   "...NNNWWNNN.....",
-  "..NNNWWWWNNNN...",
-  ".NNNNWWWWNNNNN..",
-  ".NNNNWWWWNNNNN..",
-  ".nNNNWWWWNNNNn..",
-  ".SnNNWWWWNNNnS..",
+  "..NNNWTWWnNNN...",
+  ".NNNNWTWWNnNNN..",
+  ".NNNNWTWWNNNNn..",
+  ".nNNNWTWWNNNNn..",
+  ".SnNNWTWWNNNnS..",
   "..nNNNNNNNNNn...",
 ];
 
@@ -138,26 +141,39 @@ const SPRITE_W = 16;
 const SPRITE_H = 24;
 
 // Enemigo "corrupto" estilo goomba (16x12)
-const GOOMBA_COLORS: Record<string, string> = {
-  G: "#a9552e",
-  D: "#6e3416",
-  W: "#ffffff",
-  B: "#1a1a1a",
+// Tigre en pixel art (16x12): cuerpo naranja con rayas negras, ojos blancos,
+// colmillos y patas oscuras — reemplaza al goomba.
+const TIGER_COLORS: Record<string, string> = {
+  O: "#e87820",  // naranja base
+  o: "#0e0600",  // rayas negras profundas
+  W: "#f5ede0",  // crema hocico/pecho
+  D: "#5a2404",  // café oscuro patas
+  A: "#e8a010",  // ámbar ojos
+  a: "#080400",  // pupila
+  y: "#f5a840",  // naranja claro barriga
+  w: "#fefcf8",  // colmillos blancos
 };
 
-const GOOMBA_MAP = [
-  "....GGGGGGGG....",
-  "..GGGGGGGGGGGG..",
-  ".GGGGGGGGGGGGGG.",
-  ".GGWWWGGGGWWWGG.",
-  "GGWWBWGGGGWBWWGG",
-  "GGGGGGGGGGGGGGGG",
-  "GGGGGGGGGGGGGGGG",
-  "GGGGGGGGGGGGGGGG",
-  ".GGGGGGGGGGGGGG.",
-  "..GGGGGGGGGGGG..",
-  ".DDDDDG..GDDDDD.",
-  ".DDDD......DDDD.",
+const TIGER_MAP = [
+  "....OoOoOoOO....",
+  "..OOoOOOOoOOO...",
+  ".OOOoOOOOoOOOO..",
+  ".OoOOOoOoOOOoO..",
+  "OOOAWoOOOoWAOOO.",
+  "OOoAaoOOOoaAoOO.",
+  "OOoWWWooooWWWoO.",
+  "OOoWwOooooOwWoO.",
+  "OOyoOOOOOOoOyO..",
+  "..OOoOOOOOoOO...",
+  ".DOOOOD..DOOOOD.",
+  "..DDDD....DDDD..",
+];
+
+// Palabras negativas que aparecen al aplastar un tigre
+const EVIL_WORDS = [
+  "CORRUPCIÓN", "VIOLENCIA", "TIRANÍA", "FRACKING",
+  "DESTRUCCIÓN", "IMPUNIDAD", "MENTIRA", "REPRESIÓN",
+  "CODICIA", "TRAICIÓN",
 ];
 
 function makeSprite(map: string[], colors: Record<string, string>, width = 16): HTMLCanvasElement {
@@ -305,6 +321,91 @@ function makeCasaNarinoSprite(): HTMLCanvasElement {
   return c;
 }
 
+// ---------------------------------------------------------------------------
+// Frailejón (Espeletia) procedural — igual que en duck-hunt-facho
+// ---------------------------------------------------------------------------
+const FJ_W = 48;
+const FJ_H = 72;
+
+function makeFrailejonSprite(): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = FJ_W;
+  c.height = FJ_H;
+  const g = c.getContext("2d")!;
+  const cx = FJ_W / 2;
+  const cy = 22;
+
+  const trunkW = 12;
+  const trunkTop = cy + 2;
+  for (let y = trunkTop; y < FJ_H; y++) {
+    const x0 = Math.round(cx - trunkW / 2);
+    for (let x = x0; x < x0 + trunkW; x++) {
+      const r = Math.random();
+      g.fillStyle = r < 0.14 ? "#5d3c20" : r < 0.34 ? "#8a6a3c" : "#6e4a2a";
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+  for (let y = trunkTop + 3; y < FJ_H; y += 3) {
+    g.fillStyle = "rgba(35,20,8,0.45)";
+    g.fillRect(Math.round(cx - trunkW / 2), y, trunkW, 1);
+  }
+  for (let i = -2; i <= 2; i++) {
+    const lx = cx + i * 4.5;
+    g.fillStyle = i % 2 ? "#9c7a45" : "#86653a";
+    g.beginPath();
+    g.moveTo(lx - 2.5, trunkTop + 1);
+    g.lineTo(lx + 2.5, trunkTop + 1);
+    g.lineTo(lx, trunkTop + 8 + Math.random() * 5);
+    g.closePath();
+    g.fill();
+  }
+  const leaves = 17;
+  const shades = ["#cdd9a8", "#aec57f", "#93ab68", "#bccf92"];
+  for (let i = 0; i < leaves; i++) {
+    const ang = (i / leaves) * Math.PI * 2 + Math.random() * 0.25;
+    const len = 14 + Math.random() * 7;
+    const dy = Math.sin(ang) * (Math.sin(ang) > 0 ? 0.4 : 0.85);
+    const ex = cx + Math.cos(ang) * len;
+    const ey = cy + dy * len;
+    const px = -Math.sin(ang) * 1.8;
+    const py = Math.cos(ang) * 1.8;
+    g.fillStyle = shades[i % shades.length];
+    g.beginPath();
+    g.moveTo(cx + px, cy + py);
+    g.lineTo(cx - px, cy - py);
+    g.lineTo(ex, ey);
+    g.closePath();
+    g.fill();
+  }
+  g.fillStyle = "#dde6bd";
+  g.beginPath();
+  g.arc(cx, cy, 4.2, 0, Math.PI * 2);
+  g.fill();
+  const flowers = 3;
+  for (let i = 0; i < flowers; i++) {
+    const fx = cx + (i - (flowers - 1) / 2) * 9 + (Math.random() - 0.5) * 4;
+    const fy = cy - 12 - Math.random() * 7;
+    g.strokeStyle = "#76914e";
+    g.lineWidth = 1.2;
+    g.beginPath();
+    g.moveTo(cx + (fx - cx) * 0.25, cy - 2);
+    g.quadraticCurveTo(fx, (cy + fy) / 2, fx, fy);
+    g.stroke();
+    g.fillStyle = "#ffd23f";
+    for (let p = 0; p < 6; p++) {
+      const pa = (p / 6) * Math.PI * 2;
+      g.fillRect(fx + Math.cos(pa) * 2.6 - 1, fy + Math.sin(pa) * 2.6 - 1, 2.2, 2.2);
+    }
+    g.fillStyle = "#d98e04";
+    g.fillRect(fx - 1.4, fy - 1.4, 2.8, 2.8);
+  }
+  return c;
+}
+
+// Palabras de naturaleza para los pops de monedas
+const NATURE_WORDS = ["VIDA", "PAZ", "JAGUAR", "PÁRAMO", "AGUA", "TIERRA", "SELVA", "CÓNDOR", "PÁRAMO", "RÍO"];
+const NATURE_COLORS = ["#7bff5a", "#ffffff", "#ff9e3a", "#9fd8ff", "#4fc3f7", "#c8a96e", "#4caf50", "#ffd23f"];
+
 // Patrón del signo "?" para los bloques sorpresa (5x8)
 const Q_MARK = [
   "01110",
@@ -451,10 +552,13 @@ export default function Game() {
   const [coins, setCoins] = useState(0);
   const [gameOverVisible, setGameOverVisible] = useState(false);
   const [winVisible, setWinVisible] = useState(false);
+  const [posterVisible, setPosterVisible] = useState(false);
+  const [frailejonUrl, setFrailejonUrl] = useState("");
 
   const phaseRef = useRef<Phase>("menu");
   const apiRef = useRef<{ startGame: () => void } | null>(null);
   const inputRef = useRef({ left: false, right: false, jump: false });
+  const posterTimerRef = useRef<number | null>(null);
 
   const setPhaseBoth = (p: Phase) => {
     phaseRef.current = p;
@@ -477,14 +581,44 @@ export default function Game() {
     const sprIdle = makeSprite(CEPEDA_IDLE, CEPEDA_COLORS);
     const sprWalk = makeSprite(CEPEDA_WALK, CEPEDA_COLORS);
     const sprJump = makeSprite(CEPEDA_JUMP, CEPEDA_COLORS);
-    const sprGoomba = makeSprite(GOOMBA_MAP, GOOMBA_COLORS);
+    const sprTiger = makeSprite(TIGER_MAP, TIGER_COLORS);
     const sprCasa = makeCasaNarinoSprite();
+    const sprFJ = makeFrailejonSprite();
+    setFrailejonUrl(sprFJ.toDataURL());
 
     // ----- audio chiptune por WebAudio (sin assets) -----
     let actx: AudioContext | null = null;
     let musicTimer = 0;
     let musicStep = 0;
     const MELODY = [523, 659, 784, 659, 880, 784, 659, 523, 587, 698, 880, 698, 784, 659, 587, 523];
+
+    // ----- canción de fondo en el menú -----
+    const menuAudio = typeof Audio !== "undefined" ? new Audio("/cancion.mp3") : null;
+    if (menuAudio) {
+      menuAudio.loop = true;
+      menuAudio.volume = 0.55;
+    }
+
+    function playMenuSong() {
+      if (!menuAudio || !menuAudio.paused) return;
+      menuAudio.play().catch(() => {});
+    }
+    function stopMenuSong() {
+      if (!menuAudio) return;
+      menuAudio.pause();
+      menuAudio.currentTime = 0;
+    }
+
+    // Desbloquea el audio en el primer gesto del usuario (política de autoplay)
+    const unlockAudio = () => {
+      playMenuSong();
+      document.removeEventListener("click", unlockAudio);
+      document.removeEventListener("touchstart", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
+    };
+    document.addEventListener("click", unlockAudio);
+    document.addEventListener("touchstart", unlockAudio);
+    document.addEventListener("keydown", unlockAudio);
 
     function ensureAudio() {
       if (!actx) {
@@ -564,7 +698,7 @@ export default function Game() {
       walkT: 0,
       winT: 0,
       winScored: false,
-      pops: [] as { x: number; y: number; vy: number; t: number }[],
+      pops: [] as { x: number; y: number; vy: number; t: number; word: string; col: string }[],
       fireworks: [] as { x: number; y: number; vx: number; vy: number; t: number; col: string }[],
       fwTimer: 0,
     };
@@ -588,6 +722,15 @@ export default function Game() {
 
     function startGame() {
       ensureAudio();
+      playMenuSong();
+      // Pantalla completa + bloqueo de orientación (Android/Chrome)
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen?.().catch?.(() => {});
+      }
+      (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> })
+        .lock?.("landscape-primary")
+        .catch?.(() => {});
+      if (posterTimerRef.current) clearTimeout(posterTimerRef.current);
       map = buildLevel();
       s.score = 0;
       s.coins = 0;
@@ -599,11 +742,13 @@ export default function Game() {
       resetPlayer();
       setGameOverVisible(false);
       setWinVisible(false);
+      setPosterVisible(false);
       syncHud();
-      musicStep = 0;
-      startMusic();
       setPhaseBoth("playing");
     }
+
+    // Arranca la canción al montar el componente (suena todo el tiempo)
+    playMenuSong();
     apiRef.current = { startGame };
 
     function saveBest() {
@@ -617,7 +762,6 @@ export default function Game() {
     }
 
     function gameOver() {
-      stopMusic();
       saveBest();
       setPhaseBoth("over");
       window.setTimeout(() => setGameOverVisible(true), 700);
@@ -633,7 +777,6 @@ export default function Game() {
 
     function winLevel() {
       if (phaseRef.current !== "playing") return;
-      stopMusic();
       sfxWin();
       s.winT = 0;
       if (!s.winScored) {
@@ -644,6 +787,8 @@ export default function Game() {
       saveBest();
       setPhaseBoth("win");
       window.setTimeout(() => setWinVisible(true), 1600);
+      if (posterTimerRef.current) clearTimeout(posterTimerRef.current);
+      posterTimerRef.current = window.setTimeout(() => setPosterVisible(true), 5000);
     }
 
     // ----- colisiones con tiles -----
@@ -714,7 +859,8 @@ export default function Game() {
         map[r][c] = T_USED;
         s.score += 100;
         s.coins += 1;
-        s.pops.push({ x: c * TILE + 8, y: r * TILE, vy: -2.4, t: 1 });
+        const wi = Math.floor(Math.random() * NATURE_WORDS.length);
+        s.pops.push({ x: c * TILE + 8, y: r * TILE, vy: -1.2, t: 1, word: NATURE_WORDS[wi], col: NATURE_COLORS[wi % NATURE_COLORS.length] });
         sfxCoin();
         syncHud();
       } else {
@@ -734,7 +880,8 @@ export default function Game() {
             map[r][c] = T0;
             s.score += 100;
             s.coins += 1;
-            s.pops.push({ x: c * TILE + 8, y: r * TILE, vy: -2, t: 1 });
+            const wi = Math.floor(Math.random() * NATURE_WORDS.length);
+            s.pops.push({ x: c * TILE + 8, y: r * TILE, vy: -1.0, t: 1, word: NATURE_WORDS[wi], col: NATURE_COLORS[wi % NATURE_COLORS.length] });
             sfxCoin();
             syncHud();
           }
@@ -756,8 +903,8 @@ export default function Game() {
       // partículas siempre
       for (const pop of s.pops) {
         pop.y += pop.vy * n;
-        pop.vy += 0.08 * n;
-        pop.t -= dt * 0.0022;
+        pop.vy += 0.05 * n;
+        pop.t -= dt * 0.00045;
       }
       s.pops = s.pops.filter((x) => x.t > 0);
       for (const f of s.fireworks) {
@@ -793,23 +940,37 @@ export default function Game() {
         }
         p.vy = Math.min(p.vy + GRAV * n, MAXFALL);
         moveY(p, p.vy * n);
-        // fuegos artificiales sobre la casa
+        // fuegos artificiales continuos y variados
         s.fwTimer -= dt;
         if (s.fwTimer <= 0) {
-          s.fwTimer = 280;
-          const fx = CASA_X + 30 + Math.random() * 170;
-          const fy = 25 + Math.random() * 50;
-          const cols = ["#ffd23f", "#2b4ea0", "#ce2424", "#ffffff"];
-          for (let i = 0; i < 14; i++) {
-            const a = (i / 14) * Math.PI * 2;
-            s.fireworks.push({
-              x: fx,
-              y: fy,
-              vx: Math.cos(a) * (0.8 + Math.random() * 0.8),
-              vy: Math.sin(a) * (0.8 + Math.random() * 0.8),
-              t: 1,
-              col: cols[i % cols.length],
-            });
+          s.fwTimer = 72;
+          const fx = CASA_X + 15 + Math.random() * 200;
+          const fy = 8 + Math.random() * 70;
+          const allCols = ["#ffd23f", "#2b4ea0", "#ce2424", "#ffffff", "#ff8c00", "#00e5ff", "#b040ff", "#40ff80"];
+          const baseCol = allCols[Math.floor(Math.random() * allCols.length)];
+          const type = Math.floor(Math.random() * 3);
+          if (type === 0) {
+            // Explosión radial grande
+            for (let i = 0; i < 24; i++) {
+              const a = (i / 24) * Math.PI * 2;
+              const spd = 0.9 + Math.random() * 1.4;
+              s.fireworks.push({ x: fx, y: fy, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, t: 1, col: baseCol });
+            }
+          } else if (type === 1) {
+            // Estrella bicolor
+            for (let i = 0; i < 18; i++) {
+              const a = (i / 18) * Math.PI * 2;
+              const spd = 0.5 + Math.random() * 1.9;
+              s.fireworks.push({ x: fx, y: fy, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd, t: 1, col: i % 2 === 0 ? baseCol : "#ffffff" });
+            }
+          } else {
+            // Fuente ascendente tricolor (colombia)
+            for (let i = 0; i < 20; i++) {
+              const a = Math.PI * 1.3 + (Math.random() - 0.5) * Math.PI * 0.7;
+              const spd = 1.1 + Math.random() * 1.6;
+              const colSet = ["#ffd23f", "#2b4ea0", "#ce2424"];
+              s.fireworks.push({ x: fx, y: fy + 25, vx: Math.cos(a) * spd, vy: Math.sin(a) * spd - 0.4, t: 1, col: colSet[i % 3] });
+            }
           }
         }
         return;
@@ -883,6 +1044,8 @@ export default function Game() {
             p.vy = -5.5;
             s.score += 200;
             sfxStomp();
+            const ei = Math.floor(Math.random() * EVIL_WORDS.length);
+            s.pops.push({ x: e.x + e.w / 2, y: e.y - 4, vy: -1.4, t: 1, word: EVIL_WORDS[ei], col: "#ff2020" });
             syncHud();
           } else {
             die();
@@ -901,63 +1064,234 @@ export default function Game() {
 
     // ----- dibujo -----
     function drawSky() {
-      ctx!.fillStyle = "#5c94fc";
-      ctx!.fillRect(0, 0, W, H);
+      const g = ctx!;
+      // Cielo andino con degradado de bandas
+      g.fillStyle = "#1855a8"; g.fillRect(0, 0, W, 28);
+      g.fillStyle = "#2e6dc0"; g.fillRect(0, 28, W, 28);
+      g.fillStyle = "#4e88e0"; g.fillRect(0, 56, W, 40);
+      g.fillStyle = "#6ea8f0"; g.fillRect(0, 96, W, 50);
+      g.fillStyle = "#94c0f6"; g.fillRect(0, 146, W, H - 146);
     }
 
     function drawMountains() {
-      // cordillera andina al fondo (parallax lento)
-      const par = s.camX * 0.2;
-      ctx!.fillStyle = "#7ba3e8";
+      const g = ctx!;
+      const groundY = GROUND_ROW * TILE;
+
+      // Cordillera lejana — azul profundo
+      const par1 = s.camX * 0.12;
+      for (let i = 0; i < 9; i++) {
+        const bx = i * 185 - (par1 % 185) - 92;
+        const bh = 68 + pseudo(i + 31) * 52;
+        const bw = 95 + pseudo(i + 32) * 55;
+        g.fillStyle = "#3a5e9a";
+        g.beginPath();
+        g.moveTo(bx - bw, groundY);
+        g.lineTo(bx, groundY - bh);
+        g.lineTo(bx + bw, groundY);
+        g.closePath();
+        g.fill();
+        // Nieve
+        const sh = bh * 0.30;
+        const sw = sh * 0.65;
+        g.fillStyle = "#dde8f8";
+        g.beginPath();
+        g.moveTo(bx - sw, groundY - bh + sh);
+        g.lineTo(bx, groundY - bh);
+        g.lineTo(bx + sw, groundY - bh + sh);
+        g.closePath();
+        g.fill();
+        // Sombra lateral de nieve
+        g.fillStyle = "#bcd0ec";
+        g.beginPath();
+        g.moveTo(bx, groundY - bh);
+        g.lineTo(bx + sw * 0.3, groundY - bh + sh * 0.55);
+        g.lineTo(bx + sw, groundY - bh + sh);
+        g.closePath();
+        g.fill();
+      }
+
+      // Cordillera intermedia — más clara y cercana
+      const par2 = s.camX * 0.2;
       for (let i = 0; i < 7; i++) {
-        const bx = i * 230 - (par % 230) - 115;
-        const h = 50 + pseudo(i + 31) * 35;
-        ctx!.beginPath();
-        ctx!.moveTo(bx, GROUND_ROW * TILE);
-        ctx!.lineTo(bx + 115, GROUND_ROW * TILE - h);
-        ctx!.lineTo(bx + 230, GROUND_ROW * TILE);
-        ctx!.closePath();
-        ctx!.fill();
+        const bx = i * 225 - (par2 % 225) - 112;
+        const bh = 48 + pseudo(i + 60) * 36;
+        const bw = 88 + pseudo(i + 61) * 48;
+        g.fillStyle = "#587eae";
+        g.beginPath();
+        g.moveTo(bx - bw, groundY);
+        g.lineTo(bx, groundY - bh);
+        g.lineTo(bx + bw, groundY);
+        g.closePath();
+        g.fill();
+        // Nieve
+        const sh = bh * 0.25;
+        const sw = sh * 0.6;
+        g.fillStyle = "#e8f2fc";
+        g.beginPath();
+        g.moveTo(bx - sw, groundY - bh + sh);
+        g.lineTo(bx, groundY - bh);
+        g.lineTo(bx + sw, groundY - bh + sh);
+        g.closePath();
+        g.fill();
       }
     }
 
     function drawClouds() {
-      const par = s.camX * 0.35;
-      ctx!.fillStyle = "#ffffff";
-      for (let i = 0; i < 8; i++) {
-        const cx = ((i * 170 + pseudo(i) * 90 - par) % (W + 200)) - 100;
-        const cy = 18 + pseudo(i + 50) * 55;
-        const r = 9 + pseudo(i + 90) * 6;
-        ctx!.beginPath();
-        ctx!.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx!.arc(cx + r, cy + 3, r * 0.85, 0, Math.PI * 2);
-        ctx!.arc(cx - r, cy + 3, r * 0.85, 0, Math.PI * 2);
-        ctx!.fill();
+      const g = ctx!;
+      const par = s.camX * 0.32;
+      for (let i = 0; i < 7; i++) {
+        const cx = ((i * 185 + pseudo(i) * 80 - par + W * 3) % (W + 280)) - 140;
+        const cy = 14 + pseudo(i + 50) * 42;
+        const r = 10 + pseudo(i + 90) * 7;
+        // Sombra de nube
+        g.fillStyle = "#a0b8d8";
+        g.beginPath();
+        g.arc(cx, cy + 3, r * 0.95, 0, Math.PI * 2);
+        g.arc(cx + r * 1.1, cy + 6, r * 0.76, 0, Math.PI * 2);
+        g.arc(cx - r * 0.85, cy + 6, r * 0.72, 0, Math.PI * 2);
+        g.arc(cx + r * 0.38, cy + 7, r * 0.88, 0, Math.PI * 2);
+        g.fill();
+        // Cuerpo de la nube
+        g.fillStyle = "#eef2ff";
+        g.beginPath();
+        g.arc(cx, cy, r, 0, Math.PI * 2);
+        g.arc(cx + r * 1.1, cy + 3, r * 0.76, 0, Math.PI * 2);
+        g.arc(cx - r * 0.85, cy + 3, r * 0.72, 0, Math.PI * 2);
+        g.arc(cx + r * 0.38, cy + 4, r * 0.88, 0, Math.PI * 2);
+        g.fill();
+        // Reflejo brillante superior
+        g.fillStyle = "#ffffff";
+        g.beginPath();
+        g.arc(cx - r * 0.15, cy - r * 0.25, r * 0.52, 0, Math.PI * 2);
+        g.fill();
+      }
+    }
+
+    function drawCondors() {
+      const g = ctx!;
+      for (let i = 0; i < 3; i++) {
+        const baseX = pseudo(i + 500) * COLS * TILE;
+        const spd = 18 + pseudo(i + 501) * 14;
+        const worldX = ((baseX - (s.t / 1000) * spd + COLS * TILE * 2) % (COLS * TILE + 300));
+        const x = Math.round(worldX - s.camX * 0.08);
+        if (x < -55 || x > W + 55) continue;
+
+        const cy = Math.round(16 + pseudo(i + 502) * 30);
+        const sz = 0.8 + pseudo(i + 503) * 0.5;
+        const flap = Math.sin(s.t * 0.0016 + i * 2.5) * 4;
+
+        g.globalAlpha = 0.82;
+        g.fillStyle = "#181020";
+
+        // Cuerpo
+        g.fillRect(x - Math.round(2 * sz), cy, Math.round(5 * sz), Math.round(6 * sz));
+
+        // Ala izquierda
+        g.beginPath();
+        g.moveTo(x, cy + Math.round(2 * sz));
+        g.lineTo(x - Math.round(15 * sz), cy + Math.round(flap * sz));
+        g.lineTo(x - Math.round(15 * sz), cy + Math.round((flap + 3) * sz));
+        g.lineTo(x - Math.round(6 * sz), cy + Math.round(4 * sz));
+        g.closePath();
+        g.fill();
+
+        // Ala derecha
+        g.beginPath();
+        g.moveTo(x + Math.round(2 * sz), cy + Math.round(2 * sz));
+        g.lineTo(x + Math.round(16 * sz), cy + Math.round(flap * sz));
+        g.lineTo(x + Math.round(16 * sz), cy + Math.round((flap + 3) * sz));
+        g.lineTo(x + Math.round(7 * sz), cy + Math.round(4 * sz));
+        g.closePath();
+        g.fill();
+
+        // Collar blanco (cóndor andino)
+        g.fillStyle = "#c8c0a0";
+        g.fillRect(x - Math.round(2 * sz), cy, Math.round(5 * sz), Math.round(2 * sz));
+
+        // Cabeza/cuello rojo
+        g.fillStyle = "#cc2a1a";
+        g.fillRect(x, cy - Math.round(4 * sz), Math.round(3 * sz), Math.round(4 * sz));
+
+        g.globalAlpha = 1;
       }
     }
 
     function drawHills() {
+      const g = ctx!;
       const par = s.camX * 0.55;
-      ctx!.fillStyle = "#27a127";
       for (let i = 0; i < 6; i++) {
-        const hx = ((i * 290 + pseudo(i + 7) * 120 - par) % (W + 300)) - 150;
-        const hw = 60 + pseudo(i + 13) * 50;
-        ctx!.beginPath();
-        ctx!.arc(hx, GROUND_ROW * TILE, hw, Math.PI, 0);
-        ctx!.fill();
+        const hx = ((i * 290 + pseudo(i + 7) * 120 - par + W * 2) % (W + 380)) - 190;
+        const hw = 65 + pseudo(i + 13) * 55;
+        // Sombra de la colina
+        g.fillStyle = "#1e6020";
+        g.beginPath();
+        g.arc(hx, GROUND_ROW * TILE + 3, hw, Math.PI, 0);
+        g.fill();
+        // Colina principal
+        g.fillStyle = "#2a8a2e";
+        g.beginPath();
+        g.arc(hx, GROUND_ROW * TILE, hw, Math.PI, 0);
+        g.fill();
+        // Luz en la colina
+        g.fillStyle = "#3aaa3e";
+        g.beginPath();
+        g.arc(hx - hw * 0.2, GROUND_ROW * TILE - 5, hw * 0.65, Math.PI * 1.1, Math.PI * 1.9);
+        g.fill();
+      }
+    }
+
+    function drawForest() {
+      const g = ctx!;
+      const groundY = GROUND_ROW * TILE;
+      for (let i = 0; i < 32; i++) {
+        const worldX = pseudo(i + 200) * COLS * TILE;
+        const tx = worldX - s.camX * 0.58;
+        if (tx < -60 || tx > W + 60) continue;
+        const th = 22 + pseudo(i + 201) * 18;
+        const tw = 7 + pseudo(i + 202) * 5;
+        const dark = pseudo(i + 203) > 0.5;
+
+        // Tronco
+        g.fillStyle = "#4a2a10";
+        g.fillRect(Math.round(tx) - 1, groundY - 6, 3, 6);
+
+        // Copa del pino — dos capas
+        g.fillStyle = dark ? "#1a5020" : "#246830";
+        g.beginPath();
+        g.moveTo(tx, groundY - 6 - th);
+        g.lineTo(tx - tw, groundY - 6 - th * 0.46);
+        g.lineTo(tx + tw, groundY - 6 - th * 0.46);
+        g.closePath();
+        g.fill();
+
+        g.fillStyle = dark ? "#1e6025" : "#2a7835";
+        g.beginPath();
+        g.moveTo(tx, groundY - 6 - th - th * 0.38);
+        g.lineTo(tx - tw * 0.62, groundY - 6 - th - th * 0.04);
+        g.lineTo(tx + tw * 0.62, groundY - 6 - th - th * 0.04);
+        g.closePath();
+        g.fill();
       }
     }
 
     function drawBushes() {
-      ctx!.fillStyle = "#3fbf3f";
-      for (let i = 0; i < 18; i++) {
+      const g = ctx!;
+      for (let i = 0; i < 20; i++) {
         const bx = pseudo(i + 300) * COLS * TILE - s.camX;
-        if (bx < -60 || bx > W + 60) continue;
-        const bw = 14 + pseudo(i + 310) * 14;
-        ctx!.beginPath();
-        ctx!.arc(bx, GROUND_ROW * TILE, bw, Math.PI, 0);
-        ctx!.arc(bx + bw * 0.8, GROUND_ROW * TILE, bw * 0.7, Math.PI, 0);
-        ctx!.fill();
+        if (bx < -70 || bx > W + 70) continue;
+        const bw = 16 + pseudo(i + 310) * 16;
+        // Sombra
+        g.fillStyle = "#1a6020";
+        g.beginPath();
+        g.arc(bx, GROUND_ROW * TILE + 2, bw, Math.PI, 0);
+        g.fill();
+        // Arbusto principal
+        g.fillStyle = "#38b848";
+        g.beginPath();
+        g.arc(bx, GROUND_ROW * TILE, bw, Math.PI, 0);
+        g.arc(bx + bw * 0.8, GROUND_ROW * TILE, bw * 0.65, Math.PI, 0);
+        g.arc(bx - bw * 0.7, GROUND_ROW * TILE, bw * 0.6, Math.PI, 0);
+        g.fill();
       }
     }
 
@@ -1016,12 +1350,9 @@ export default function Game() {
           g.fillRect(x + 13, y + 1, 2, 2);
           g.fillRect(x + 1, y + 13, 2, 2);
           g.fillRect(x + 13, y + 13, 2, 2);
-          g.fillStyle = "#ffffff";
-          Q_MARK.forEach((row, py) => {
-            for (let px = 0; px < row.length; px++) {
-              if (row[px] === "1") g.fillRect(x + 5 + px * 1.4, y + 3 + py * 1.4, 1.5, 1.5);
-            }
-          });
+          // frailejón centrado en el bloque
+          g.imageSmoothingEnabled = false;
+          g.drawImage(sprFJ, x + 3, y + 1, 10, 14);
           break;
         }
         case T_USED:
@@ -1077,16 +1408,17 @@ export default function Game() {
           g.fillRect(x + TILE - 3, y, 3, TILE);
           break;
         case T_COIN: {
-          const wob = Math.abs(Math.sin(s.t * 0.005 + x * 0.1));
-          const cw = 3 + wob * 4;
-          g.fillStyle = "#c98a00";
+          const bob = Math.sin(s.t * 0.004 + x * 0.05) * 1.5;
+          const ty = Math.round(y - 2 + bob);
+          // Frailejón flotante sin fondo, solo con brillo suave
+          g.globalAlpha = 0.25;
+          g.fillStyle = "#90ff60";
           g.beginPath();
-          g.ellipse(x + 8, y + 8, cw, 6.5, 0, 0, Math.PI * 2);
+          g.ellipse(x + 8, ty + 8, 7, 9, 0, 0, Math.PI * 2);
           g.fill();
-          g.fillStyle = "#ffd23f";
-          g.beginPath();
-          g.ellipse(x + 8, y + 8, Math.max(1, cw - 1.5), 5, 0, 0, Math.PI * 2);
-          g.fill();
+          g.globalAlpha = 1;
+          g.imageSmoothingEnabled = false;
+          g.drawImage(sprFJ, x + 2, ty - 1, 12, 17);
           break;
         }
       }
@@ -1113,7 +1445,7 @@ export default function Game() {
         if (e.dead) {
           // aplastado
           ctx!.globalAlpha = Math.max(0, e.deadT / 450);
-          ctx!.drawImage(sprGoomba, x - 1, e.y + e.h - 5, 16, 5);
+          ctx!.drawImage(sprTiger, x - 1, e.y + e.h - 5, 16, 5);
           ctx!.globalAlpha = 1;
           continue;
         }
@@ -1121,7 +1453,7 @@ export default function Game() {
         ctx!.save();
         ctx!.translate(x + e.w / 2, Math.round(e.y));
         if (flip) ctx!.scale(-1, 1);
-        ctx!.drawImage(sprGoomba, -8, 0, 16, 12);
+        ctx!.drawImage(sprTiger, -8, 0, 16, 12);
         ctx!.restore();
       }
     }
@@ -1148,15 +1480,26 @@ export default function Game() {
     }
 
     function drawParticles() {
+      ctx!.font = "bold 9px monospace";
+      ctx!.textAlign = "center";
       for (const pop of s.pops) {
-        ctx!.globalAlpha = Math.max(0, pop.t);
-        ctx!.fillStyle = "#ffd23f";
-        const x = pop.x - s.camX;
-        ctx!.beginPath();
-        ctx!.ellipse(x, pop.y, 4, 5.5, 0, 0, Math.PI * 2);
-        ctx!.fill();
+        const x = Math.round(pop.x - s.camX);
+        const y = Math.round(pop.y);
+        const alpha = Math.max(0, pop.t);
+        // Contorno negro en 4 direcciones — máxima legibilidad
+        ctx!.globalAlpha = alpha * 0.92;
+        ctx!.fillStyle = "#000";
+        ctx!.fillText(pop.word, x - 1, y - 1);
+        ctx!.fillText(pop.word, x + 1, y - 1);
+        ctx!.fillText(pop.word, x - 1, y + 1);
+        ctx!.fillText(pop.word, x + 1, y + 1);
+        // Texto de color encima
+        ctx!.globalAlpha = alpha;
+        ctx!.fillStyle = pop.col;
+        ctx!.fillText(pop.word, x, y);
         ctx!.globalAlpha = 1;
       }
+      ctx!.textAlign = "left";
       for (const f of s.fireworks) {
         ctx!.globalAlpha = Math.max(0, f.t);
         ctx!.fillStyle = f.col;
@@ -1169,7 +1512,9 @@ export default function Game() {
       drawSky();
       drawMountains();
       drawClouds();
+      drawCondors();
       drawHills();
+      drawForest();
       drawBushes();
       drawCasa();
       drawMap();
@@ -1211,10 +1556,13 @@ export default function Game() {
 
     return () => {
       cancelAnimationFrame(raf);
-      stopMusic();
+      stopMenuSong();
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("click", unlockAudio);
+      document.removeEventListener("touchstart", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
       actx?.close().catch(() => {});
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1230,7 +1578,23 @@ export default function Game() {
 
   const playing = phase === "playing" || phase === "dying" || phase === "win";
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch?.(() => {});
+    } else {
+      document.exitFullscreen?.().catch?.(() => {});
+    }
+  };
+
   return (
+    <>
+      {/* Overlay "Gira tu teléfono" — visible sólo en portrait + touch */}
+      <div className={styles.portraitWarning}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.webp" alt="Iván Cepeda" className={styles.rotateIcon} />
+        <p className={styles.rotateTitle}>GIRA TU TELÉFONO</p>
+      </div>
+
     <div className={styles.wrapper}>
       <canvas ref={canvasRef} width={W} height={H} className={styles.canvas} />
 
@@ -1243,19 +1607,24 @@ export default function Game() {
               <span>{score}</span>
             </div>
             <div className={styles.scoreBox}>
-              MONEDAS
+              FRAILEJONES
               <br />
               <span>{coins}</span>
             </div>
             <div className={styles.scoreBox}>
               VIDAS
               <br />
-              <span>
-                {Array.from({ length: MAX_LIVES }, (_, i) => (
-                  <span key={i} className={i < lives ? styles.lifeOk : styles.lifeLost}>
-                    ♥
-                  </span>
-                ))}
+              <span className={styles.livesIcons}>
+                {Array.from({ length: MAX_LIVES }, (_, i) =>
+                  frailejonUrl ? (
+                    <img
+                      key={i}
+                      src={frailejonUrl}
+                      alt="frailejón"
+                      className={i < lives ? styles.fjAlive : styles.fjDead}
+                    />
+                  ) : null
+                )}
               </span>
             </div>
             <div className={styles.scoreBox}>
@@ -1266,6 +1635,10 @@ export default function Game() {
           </div>
 
           <div className={styles.worldTag}>MUNDO 1-1</div>
+
+          <button className={styles.fsBtn} onClick={toggleFullscreen} aria-label="Pantalla completa">
+            ⛶
+          </button>
 
           <div className={styles.touchControls}>
             <div className={styles.padLeft}>
@@ -1325,11 +1698,8 @@ export default function Game() {
       {phase === "menu" && (
         <div className={styles.overlay}>
           <div className={styles.panel}>
-            <h1 className={styles.title}>
-              CEPEDA
-              <br />
-              BROS
-            </h1>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.webp" alt="Iván Cepeda por la vida" className={styles.menuLogo} />
             <p className={styles.subtitle}>RUMBO A LA CASA DE NARIÑO</p>
             <div className={styles.scoresRow}>
               <div className={styles.scoreItem}>
@@ -1345,6 +1715,11 @@ export default function Game() {
               EN PC: FLECHAS + ESPACIO
               <br />
               LLEGA A LA CASA DE NARIÑO
+            </p>
+            <p className={styles.hintIos}>
+              iPhone: agrega a inicio para
+              <br />
+              jugar en pantalla completa
             </p>
           </div>
           <p className={styles.credit}>
@@ -1400,7 +1775,16 @@ export default function Game() {
         </div>
       )}
 
+      {posterVisible && (
+        <div className={styles.posterOverlay} onClick={() => setPosterVisible(false)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/poster.jpg" className={styles.posterImg} alt="Campaña Iván Cepeda" />
+          <p className={styles.posterHint}>toca para continuar</p>
+        </div>
+      )}
+
       <div className={styles.scanlines} />
     </div>
+    </>
   );
 }

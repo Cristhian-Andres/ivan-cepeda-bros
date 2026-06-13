@@ -12,6 +12,15 @@ export const metadata: Metadata = {
   title: "Cepeda Bros",
   description:
     "Plataformero retro estilo Mario Bros: corre, salta y esquiva obstáculos con Iván Cepeda hasta llegar a la Casa de Nariño.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    title: "Cepeda Bros",
+    statusBarStyle: "black-translucent",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
@@ -20,6 +29,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: "#5c94fc",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

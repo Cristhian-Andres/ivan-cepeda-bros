@@ -1,0 +1,18 @@
+{
+  "name": "Cepeda Bros",
+  "short_name": "Cepeda Bros",
+  "description": "Plataformero retro: lleva a Iván Cepeda a la Casa de Nariño",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d0d1a",
+  "theme_color": "#5c94fc",
+  "icons": [
+    {
+      "src": "/logo.webp",
+      "sizes": "any",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+}

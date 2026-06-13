@@ -1,3 +1,49 @@
+/* Overlay de orientación portrait — CSS puro, sin JS */
+.portraitWarning {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #0d0d1a;
+  color: #fff;
+  font-family: var(--font-press-start), monospace;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  padding: 24px;
+}
+
+@media (orientation: portrait) and (pointer: coarse) {
+  .portraitWarning {
+    display: flex;
+  }
+}
+
+.rotateIcon {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  object-fit: contain;
+  box-shadow: 0 0 0 3px #ffe94e, 0 0 24px rgba(255, 233, 78, 0.45);
+  animation: logoPulse 2s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% { box-shadow: 0 0 0 3px #ffe94e, 0 0 18px rgba(255, 233, 78, 0.35); }
+  50%       { box-shadow: 0 0 0 4px #ffe94e, 0 0 32px rgba(255, 233, 78, 0.7); }
+}
+
+.rotateTitle {
+  font-size: 11px;
+  color: #ffe94e;
+  letter-spacing: 1px;
+  margin: 0;
+}
+
+
+/* Wrapper del juego */
 .wrapper {
   position: relative;
   width: min(100vw, calc(100dvh * 16 / 9));
@@ -6,7 +52,20 @@
   background: #000;
 }
 
-@media (orientation: landscape) and (min-width: 900px) {
+/* Móvil en landscape: llena todo el alto disponible */
+@media (orientation: landscape) and (pointer: coarse) {
+  .wrapper {
+    width: auto;
+    height: 100dvh;
+    max-width: 100vw;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+  }
+}
+
+/* Desktop grande en landscape */
+@media (orientation: landscape) and (min-width: 900px) and (pointer: fine) {
   .wrapper {
     height: min(calc(100dvh - 32px), 620px);
     width: auto;
@@ -67,14 +126,25 @@
   color: #ffe94e;
 }
 
-.lifeOk {
-  color: #ff5252;
-  text-shadow: 1px 1px 0 #000;
+.livesIcons {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  vertical-align: middle;
 }
 
-.lifeLost {
-  color: rgba(255, 255, 255, 0.3);
-  text-shadow: 1px 1px 0 #000;
+.fjAlive {
+  width: 14px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: drop-shadow(1px 1px 0 #000);
+}
+
+.fjDead {
+  width: 14px;
+  height: auto;
+  image-rendering: pixelated;
+  filter: grayscale(1) brightness(0.3);
 }
 
 .worldTag {
@@ -133,25 +203,55 @@
 }
 
 .padBtn {
-  width: 56px;
-  height: 56px;
-  font-size: 16px;
+  width: 62px;
+  height: 62px;
+  font-size: 18px;
 }
 
 .jumpBtn {
   position: absolute;
   right: calc(14px + env(safe-area-inset-right));
   bottom: calc(14px + env(safe-area-inset-bottom));
-  width: 66px;
-  height: 66px;
-  font-size: 18px;
-  background: rgba(206, 36, 36, 0.45);
+  width: 72px;
+  height: 72px;
+  font-size: 20px;
+  background: rgba(206, 36, 36, 0.5);
 }
 
 .padBtn:active,
 .jumpBtn:active {
-  background: rgba(255, 233, 78, 0.55);
+  background: rgba(255, 233, 78, 0.6);
   color: #1a1a2e;
+  transform: scale(0.95);
+}
+
+/* Botón pantalla completa — solo en touch */
+.fsBtn {
+  display: none;
+  position: absolute;
+  top: calc(8px + env(safe-area-inset-top));
+  right: calc(8px + env(safe-area-inset-right));
+  z-index: 20;
+  pointer-events: all;
+  touch-action: none;
+  font-family: inherit;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+@media (pointer: fine) {
+  .fsBtn {
+    display: none !important;
+  }
 }
 
 .banner {
@@ -204,6 +304,17 @@
     transform: scale(1);
     opacity: 1;
   }
+}
+
+.menuLogo {
+  display: block;
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  box-shadow: 0 0 0 3px #ffe94e, 0 0 18px rgba(255, 233, 78, 0.5);
+  animation: pop 0.3s ease-out;
 }
 
 .title {
@@ -288,6 +399,20 @@
   line-height: 2;
 }
 
+.hintIos {
+  display: none;
+  font-size: 5px;
+  color: #666;
+  margin-top: 8px;
+  line-height: 2;
+}
+
+@media (pointer: coarse) {
+  .hintIos {
+    display: block;
+  }
+}
+
 .creditInGame {
   position: absolute;
   bottom: calc(2px + env(safe-area-inset-bottom));
@@ -361,4 +486,35 @@
   50% {
     opacity: 0;
   }
+}
+
+.posterOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 45;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: pop 0.45s ease-out;
+}
+
+.posterImg {
+  max-width: 92%;
+  max-height: 86%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 2px rgba(255, 233, 78, 0.8),
+    0 0 28px rgba(255, 210, 63, 0.5);
+}
+
+.posterHint {
+  margin-top: 10px;
+  font-size: 7px;
+  color: rgba(255, 255, 255, 0.55);
+  animation: blink 1.1s step-start infinite;
+  letter-spacing: 1px;
 }
