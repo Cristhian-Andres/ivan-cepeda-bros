@@ -556,50 +556,53 @@
   animation: pop 0.45s ease-out;
 }
 
-/* Zona de gestos táctiles — cubre el canvas, invisible al usuario */
-.gestureOverlay {
+/* Controles táctiles dentro del canvas: ◀ ▶ izquierda, A derecha */
+.inGameControls {
   position: absolute;
-  inset: 0;
-  z-index: 5;
-  touch-action: none;
+  bottom: 10px;
+  left: 8px;
+  right: 8px;
   display: none;
-  user-select: none;
-  -webkit-user-select: none;
+  justify-content: space-between;
+  align-items: flex-end;
+  z-index: 15;
+  pointer-events: none;
 }
 
 @media (pointer: coarse) {
-  .gestureOverlay {
-    display: block;
+  .inGameControls {
+    display: flex;
   }
 }
 
-/* Hint que aparece los primeros 2.5s de partida */
-.touchHint {
-  position: absolute;
-  bottom: 10px;
-  left: 0;
-  right: 0;
+.inGamePad {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 14px;
-  z-index: 12;
+  gap: 10px;
   pointer-events: none;
-  font-size: 7px;
-  color: rgba(255, 255, 255, 0.7);
-  text-shadow: 1px 1px 0 #000;
-  animation: touchHintFade 5s ease-out forwards;
 }
 
-.touchHintJump {
-  font-size: 6px;
-  color: rgba(255, 233, 78, 0.85);
-  text-align: center;
+.inGameJump {
+  width: 68px;
+  height: 68px;
+  font-size: 20px;
+  background: rgba(206, 36, 36, 0.55);
+  pointer-events: all;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: inherit;
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
 }
 
-@keyframes touchHintFade {
-  0%, 60% { opacity: 1; }
-  100%     { opacity: 0; }
+.inGameJump:active {
+  background: rgba(255, 233, 78, 0.6);
+  color: #1a1a2e;
+  transform: scale(0.95);
 }
 
 .posterImg {

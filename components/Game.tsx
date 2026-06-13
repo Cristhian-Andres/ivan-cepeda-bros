@@ -584,7 +584,6 @@ export default function Game() {
   const [frailejonUrl, setFrailejonUrl] = useState("");
   const [portraitIntroVisible, setPortraitIntroVisible] = useState(false);
   const [isTouch, setIsTouch] = useState(false);
-  const [touchHintVisible, setTouchHintVisible] = useState(false);
   const [playAgainReady, setPlayAgainReady] = useState(false);
 
   const phaseRef = useRef<Phase>("menu");
@@ -592,7 +591,6 @@ export default function Game() {
   const inputRef = useRef({ left: false, right: false, jump: false });
   const posterTimerRef = useRef<number | null>(null);
   const introShownRef = useRef(false);
-  const gestureRef = useRef(new Map<number, { sx: number; sy: number; t: number; side: "left" | "right"; jumpOnly: boolean }>());
 
   const setPhaseBoth = (p: Phase) => {
     phaseRef.current = p;
@@ -624,14 +622,6 @@ export default function Game() {
   useEffect(() => {
     setIsTouch(window.matchMedia("(pointer: coarse)").matches);
   }, []);
-
-  useEffect(() => {
-    if (phase === "playing" && isTouch) {
-      setTouchHintVisible(true);
-      const t = window.setTimeout(() => setTouchHintVisible(false), 5000);
-      return () => window.clearTimeout(t);
-    }
-  }, [phase, isTouch]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -1641,75 +1631,10 @@ export default function Game() {
 
   const handleStart = () => apiRef.current?.startGame();
 
-  // Controles táctiles por gestos:
-  //   - 1er toque: mitad izq/der = mover; swipe arriba o tap rápido = saltar
-  //   - 2do toque simultáneo: SIEMPRE salta (así se puede mover+saltar a la vez)
-  const triggerJump = () => {
-    inputRef.current.jump = true;
-    window.setTimeout(() => { inputRef.current.jump = false; }, 150);
-  };
-
-  const handleGestureDown = (e: React.PointerEvent<HTMLDivElement>) => {
+  // Controles táctiles por botón
+  const press = (key: "left" | "right" | "jump", down: boolean) => (e: React.PointerEvent) => {
     e.preventDefault();
-    (e.currentTarget as Element).setPointerCapture(e.pointerId);
-
-    // Si ya hay un toque activo de movimiento → este toque es siempre salto
-    const hasMovement = [...gestureRef.current.values()].some((g) => !g.jumpOnly);
-    if (hasMovement) {
-      gestureRef.current.set(e.pointerId, { sx: e.clientX, sy: e.clientY, t: Date.now(), side: "left", jumpOnly: true });
-      return;
-    }
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const portrait = window.innerHeight > window.innerWidth;
-    const side: "left" | "right" = portrait
-      ? e.clientY > rect.top + rect.height / 2 ? "left" : "right"
-      : e.clientX < rect.left + rect.width / 2 ? "left" : "right";
-    gestureRef.current.set(e.pointerId, { sx: e.clientX, sy: e.clientY, t: Date.now(), side, jumpOnly: false });
-    inputRef.current[side] = true;
-  };
-
-  const handleGestureMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const g = gestureRef.current.get(e.pointerId);
-    if (!g || g.jumpOnly) return;
-    const portrait = window.innerHeight > window.innerWidth;
-    const dx = e.clientX - g.sx;
-    const dy = e.clientY - g.sy;
-    const jumped = portrait ? dx < -35 : dy < -35;
-    if (jumped) {
-      gestureRef.current.delete(e.pointerId);
-      inputRef.current[g.side] = false;
-      triggerJump();
-    }
-  };
-
-  const handleGestureUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const g = gestureRef.current.get(e.pointerId);
-    if (!g) return;
-    gestureRef.current.delete(e.pointerId);
-
-    if (g.jumpOnly) {
-      triggerJump();
-      return;
-    }
-
-    inputRef.current[g.side] = false;
-    const dx = e.clientX - g.sx;
-    const dy = e.clientY - g.sy;
-    const elapsed = Date.now() - g.t;
-    const portrait = window.innerHeight > window.innerWidth;
-    const swipeJump = portrait ? dx < -25 : dy < -25;
-    const quickTap = elapsed < 220 && Math.abs(dx) < 15 && Math.abs(dy) < 15;
-    if (swipeJump || quickTap) triggerJump();
-  };
-
-  const handleGestureCancel = (e: React.PointerEvent<HTMLDivElement>) => {
-    const g = gestureRef.current.get(e.pointerId);
-    if (!g) return;
-    gestureRef.current.delete(e.pointerId);
-    if (!g.jumpOnly) inputRef.current[g.side] = false;
+    inputRef.current[key] = down;
   };
 
   const playing = phase === "playing" || phase === "dying" || phase === "win";
@@ -1779,23 +1704,35 @@ export default function Game() {
               ⛶
             </button>
 
-            {/* Zona de gestos táctiles — cubre todo el canvas, invisible */}
-            <div
-              className={styles.gestureOverlay}
-              onPointerDown={handleGestureDown}
-              onPointerMove={handleGestureMove}
-              onPointerUp={handleGestureUp}
-              onPointerCancel={handleGestureCancel}
-            />
-
-            {/* Hint táctil — aparece 2.5s al iniciar partida */}
-            {touchHintVisible && (
-              <div className={styles.touchHint}>
-                <span>◀ MOVER IZQ</span>
-                <span className={styles.touchHintJump}>↑ DESLIZA O TOCA = SALTA</span>
-                <span>MOVER DER ▶</span>
+            {/* Controles táctiles: ◀ ▶ a la izquierda, A a la derecha, al fondo del canvas */}
+            <div className={styles.inGameControls}>
+              <div className={styles.inGamePad}>
+                <button
+                  className={styles.padBtn}
+                  onPointerDown={press("left", true)}
+                  onPointerUp={press("left", false)}
+                  onPointerLeave={press("left", false)}
+                  onPointerCancel={press("left", false)}
+                  onContextMenu={(e) => e.preventDefault()}
+                >◀</button>
+                <button
+                  className={styles.padBtn}
+                  onPointerDown={press("right", true)}
+                  onPointerUp={press("right", false)}
+                  onPointerLeave={press("right", false)}
+                  onPointerCancel={press("right", false)}
+                  onContextMenu={(e) => e.preventDefault()}
+                >▶</button>
               </div>
-            )}
+              <button
+                className={styles.inGameJump}
+                onPointerDown={press("jump", true)}
+                onPointerUp={press("jump", false)}
+                onPointerLeave={press("jump", false)}
+                onPointerCancel={press("jump", false)}
+                onContextMenu={(e) => e.preventDefault()}
+              >A</button>
+            </div>
 
             <p className={styles.creditInGame}>
               By{" "}
