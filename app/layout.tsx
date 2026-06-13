@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Press_Start_2P } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const pressStart = Press_Start_2P({
@@ -37,6 +38,18 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es">
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-HD9QZF9YFE"
+        strategy="afterInteractive"
+      />
+      <Script id="gtag-init" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-HD9QZF9YFE');
+        `}
+      </Script>
       <body className={pressStart.variable}>{children}</body>
     </html>
   );
