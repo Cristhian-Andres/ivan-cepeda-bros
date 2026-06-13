@@ -575,20 +575,20 @@
   }
 }
 
-/* Flechas ◀ ▶ en el lado IZQUIERDO del portrait, parte baja lateral */
+/* Flechas ◀ ▶ en la esquina SUPERIOR IZQUIERDA del portrait */
 .padPortrait {
   position: absolute;
-  left: calc(8px + env(safe-area-inset-left));
-  bottom: calc(18% + env(safe-area-inset-bottom));
+  left: calc(10px + env(safe-area-inset-left));
+  top: calc(10px + env(safe-area-inset-top));
   display: flex;
   gap: 10px;
 }
 
-/* Botón A en el lado DERECHO del portrait, parte baja lateral */
+/* Botón A en la esquina SUPERIOR DERECHA del portrait */
 .jumpPortrait {
   position: absolute;
-  right: calc(8px + env(safe-area-inset-right));
-  bottom: calc(18% + env(safe-area-inset-bottom));
+  right: calc(10px + env(safe-area-inset-right));
+  top: calc(10px + env(safe-area-inset-top));
   width: 72px;
   height: 72px;
   font-size: 20px;
